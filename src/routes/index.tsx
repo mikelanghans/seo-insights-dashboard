@@ -40,6 +40,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 type ScanMode = "single" | "site";
+type ScanType = "seo" | "a11y";
 type SiteScope = "quick" | "standard" | "deep";
 
 const SCOPE_LABELS: Record<SiteScope, { label: string; pages: number; desc: string }> = {
@@ -70,6 +71,7 @@ function Index() {
   const { user, loading: authLoading } = useAuth();
   const [url, setUrl] = useState("https://");
   const [mode, setMode] = useState<ScanMode>("single");
+  const [scanType, setScanType] = useState<ScanType>("seo");
   const [scope, setScope] = useState<SiteScope>("standard");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -131,7 +133,7 @@ function Index() {
       const response = await fetch("/api/seo-audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: auditUrl }),
+        body: JSON.stringify({ url: auditUrl, auditType: scanType }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
@@ -168,26 +170,30 @@ function Index() {
             Agency SEO Diagnostics
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Instant SEO health check for any page
+            {scanType === "a11y"
+              ? "Instant accessibility check for any page"
+              : "Instant SEO health check for any page"}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            On-page signals, Core Web Vitals, and structured data — analyzed in one click.
+            {scanType === "a11y"
+              ? "Common WCAG 2.1 issues, with plain-English fixes — analyzed in one click."
+              : "On-page signals, Core Web Vitals, and structured data — analyzed in one click."}
           </p>
 
-          {/* Mode toggle */}
+          {/* Scan-type toggle */}
           <div className="mx-auto mt-7 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
             {([
-              { value: "single", label: "Single page", icon: FileText },
-              { value: "site", label: "Full site", icon: Layers },
+              { value: "seo", label: "SEO scan", icon: ScanSearch },
+              { value: "a11y", label: "Accessibility scan", icon: Eye },
             ] as const).map((opt) => {
               const Icon = opt.icon;
-              const active = mode === opt.value;
+              const active = scanType === opt.value;
               return (
                 <button
                   key={opt.value}
                   type="button"
                   disabled={loading}
-                  onClick={() => setMode(opt.value)}
+                  onClick={() => setScanType(opt.value)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
@@ -200,6 +206,35 @@ function Index() {
               );
             })}
           </div>
+
+          {/* Mode toggle (single page vs full site) — SEO only for now */}
+          {scanType === "seo" && (
+            <div className="mx-auto mt-3 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
+              {([
+                { value: "single", label: "Single page", icon: FileText },
+                { value: "site", label: "Full site", icon: Layers },
+              ] as const).map((opt) => {
+                const Icon = opt.icon;
+                const active = mode === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setMode(opt.value)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <form
             onSubmit={handleSubmit}
@@ -356,44 +391,50 @@ function Index() {
               </div>
             )}
 
-            <GradeCard grade={computeGrade(report)} />
+            {report.auditType === "a11y" ? (
+              <AccessibilityTab report={report.accessibility} />
+            ) : (
+              <>
+                <GradeCard grade={computeGrade(report)} />
 
-            <Tabs defaultValue="onpage" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-card shadow-[var(--shadow-card)] h-auto p-1">
-                <TabsTrigger value="onpage" className="gap-2 py-2.5">
-                  <Globe className="h-4 w-4" />
-                  <span className="hidden sm:inline">On-Page SEO</span>
-                  <span className="sm:hidden">On-Page</span>
-                </TabsTrigger>
-                <TabsTrigger value="speed" className="gap-2 py-2.5">
-                  <Gauge className="h-4 w-4" />
-                  <span className="hidden sm:inline">Page Speed</span>
-                  <span className="sm:hidden">Speed</span>
-                </TabsTrigger>
-                <TabsTrigger value="a11y" className="gap-2 py-2.5">
-                  <Eye className="h-4 w-4" />
-                  <span className="hidden sm:inline">Accessibility</span>
-                  <span className="sm:hidden">A11y</span>
-                </TabsTrigger>
-                <TabsTrigger value="schema" className="gap-2 py-2.5">
-                  <Code2 className="h-4 w-4" />
-                  Schema
-                </TabsTrigger>
-              </TabsList>
+                <Tabs defaultValue="onpage" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 bg-card shadow-[var(--shadow-card)] h-auto p-1">
+                    <TabsTrigger value="onpage" className="gap-2 py-2.5">
+                      <Globe className="h-4 w-4" />
+                      <span className="hidden sm:inline">On-Page SEO</span>
+                      <span className="sm:hidden">On-Page</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="speed" className="gap-2 py-2.5">
+                      <Gauge className="h-4 w-4" />
+                      <span className="hidden sm:inline">Page Speed</span>
+                      <span className="sm:hidden">Speed</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="a11y" className="gap-2 py-2.5">
+                      <Eye className="h-4 w-4" />
+                      <span className="hidden sm:inline">Accessibility</span>
+                      <span className="sm:hidden">A11y</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="schema" className="gap-2 py-2.5">
+                      <Code2 className="h-4 w-4" />
+                      Schema
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="onpage" className="mt-6">
-                <OnPageTab data={report.onPage} />
-              </TabsContent>
-              <TabsContent value="speed" className="mt-6">
-                <PageSpeedTab mobile={report.pageSpeed.mobile} desktop={report.pageSpeed.desktop} />
-              </TabsContent>
-              <TabsContent value="a11y" className="mt-6">
-                <AccessibilityTab report={report.accessibility} />
-              </TabsContent>
-              <TabsContent value="schema" className="mt-6">
-                <SchemaTab items={report.schema} />
-              </TabsContent>
-            </Tabs>
+                  <TabsContent value="onpage" className="mt-6">
+                    <OnPageTab data={report.onPage} />
+                  </TabsContent>
+                  <TabsContent value="speed" className="mt-6">
+                    <PageSpeedTab mobile={report.pageSpeed.mobile} desktop={report.pageSpeed.desktop} />
+                  </TabsContent>
+                  <TabsContent value="a11y" className="mt-6">
+                    <AccessibilityTab report={report.accessibility} />
+                  </TabsContent>
+                  <TabsContent value="schema" className="mt-6">
+                    <SchemaTab items={report.schema} />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </section>
         )}
 
