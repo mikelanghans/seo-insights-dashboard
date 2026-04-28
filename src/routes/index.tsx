@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -43,7 +42,6 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
-  const runSeoAuditFn = useServerFn(runSeoAudit);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -80,7 +78,7 @@ function Index() {
     setError(null);
     setReport(null);
     try {
-      const data = await runSeoAuditFn({ data: { url: auditUrl } });
+      const data = await runSeoAudit({ data: { url: auditUrl } });
       if (activeAuditIdRef.current !== auditId) return;
       setReport(data as AuditReport);
       setProgress(100);
