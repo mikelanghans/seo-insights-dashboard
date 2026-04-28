@@ -76,34 +76,7 @@ export function SiteResults({ report }: { report: SiteAuditReport }) {
 
       {/* Site-wide issue rollup */}
       {site.issueRollup.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-          <h3 className="mb-1 text-sm font-semibold text-foreground">
-            Issues across the site
-          </h3>
-          <p className="mb-4 text-xs text-muted-foreground">
-            Same issues grouped — fix once, improve every affected page.
-          </p>
-          <ul className="divide-y divide-border">
-            {site.issueRollup.slice(0, 12).map((issue) => {
-              const sev = SEV_STYLES[issue.severity];
-              const Icon = sev.icon;
-              return (
-                <li key={issue.title} className="flex items-start gap-3 py-3">
-                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${sev.className}`} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="text-sm font-medium text-foreground">{issue.title}</p>
-                      <span className="shrink-0 text-xs font-medium text-muted-foreground">
-                        {issue.pageCount} {issue.pageCount === 1 ? "page" : "pages"}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{issue.fix}</p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <SiteIssueRollup issues={site.issueRollup} />
       )}
 
       {/* Per-page table */}
