@@ -393,10 +393,7 @@ function Index() {
           </section>
         )}
 
-        {/* Site results */}
-        {siteReport && !loading && (
-          <SiteResults report={siteReport} onReportUpdate={handleSiteReportUpdate} />
-        )}
+        {/* Site scans run on the dedicated /scan/$id page so progress can be tracked. */}
 
         {/* Recent saved scans (when signed in and no live result) */}
         {user && !report && !siteReport && !loading && (
