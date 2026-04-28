@@ -59,6 +59,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
       issues.push({
         severity: "warning",
         title: `Title tag length is ${op.titleLength} characters`,
+        groupKey: "title-length",
+        groupTitle: op.titleLength < 30 ? "Title tag too short" : "Title tag too long",
         description:
           op.titleLength < 30
             ? "Your title is too short to clearly describe the page and capture relevant keywords."
