@@ -288,15 +288,25 @@ function Index() {
                 <div className="absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary" />
               </div>
               <div className="text-center">
-                <p className="text-base font-semibold text-foreground">Running audit…</p>
+                <p className="text-base font-semibold text-foreground">
+                  {mode === "site" ? "Scanning site…" : "Running audit…"}
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Crawling page, parsing schema, and testing PageSpeed (mobile + desktop)
+                  {mode === "site"
+                    ? `Mapping URLs and auditing up to ${SCOPE_LABELS[scope].pages} pages`
+                    : "Crawling page, parsing schema, and testing PageSpeed (mobile + desktop)"}
                 </p>
               </div>
               <div className="w-full max-w-md space-y-2">
                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>This usually takes 10–30 seconds</span>
+                  <span>
+                    {mode === "site"
+                      ? `${SCOPE_LABELS[scope].label} scan · usually ${
+                          scope === "quick" ? "30s–1min" : scope === "standard" ? "1–3 min" : "3–8 min"
+                        }`
+                      : "This usually takes 10–30 seconds"}
+                  </span>
                   <span className="tabular-nums">{Math.round(progress)}%</span>
                 </div>
               </div>
