@@ -123,12 +123,12 @@ async function auditPagesWithBatch(
       ignoreInvalidURLs: true,
       maxConcurrency: 10,
     });
-    const deadline = Date.now() + 28_000;
-    let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 4 });
+    const deadline = Date.now() + 18_000;
+    let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
 
     while (latest.status === "scraping" && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 4 });
+      latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
     }
 
     const docs = (latest.data ?? []) as FirecrawlDocument[];
@@ -137,7 +137,7 @@ async function auditPagesWithBatch(
       void fc.cancelBatchScrape(job.id).catch(() => undefined);
     }
 
-    if (docs.length === 0) return [await auditOnePage(fc, urls[0])];
+    if (docs.length === 0) return [pageReportFromDocument(urls[0], undefined)];
     return docs.map((doc, index) => pageReportFromDocument(doc.metadata?.sourceURL || urls[index] || urls[0], doc));
   } catch (error) {
     warnings.push(`Batch scanning was unavailable, so the tool scanned a smaller sample. ${error instanceof Error ? error.message : ""}`.trim());
