@@ -254,7 +254,7 @@ function scoreSpeed(report: AuditReport): GradeBreakdown {
   };
 }
 
-function scoreSchema(report: AuditReport): GradeBreakdown {
+function scoreSchema(report: PageLike): GradeBreakdown {
   const count = report.schema.length;
   const issues: Issue[] = [];
   let s = 0;
