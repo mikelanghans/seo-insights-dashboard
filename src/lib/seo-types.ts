@@ -1,3 +1,6 @@
+export type { A11yReport, A11yIssue, A11yImpact } from "./a11y-audit";
+import type { A11yReport } from "./a11y-audit";
+
 export interface OnPageReport {
   finalUrl: string;
   title: string | null;
