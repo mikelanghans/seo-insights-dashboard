@@ -125,34 +125,60 @@ export function OnPageTab({ data }: { data: OnPageReport }) {
         </p>
         <div className="space-y-3">
 
-          {(["h1", "h2", "h3"] as const).map((tag) => (
-            <div key={tag}>
-              <div className="mb-2 flex items-center gap-2">
-                <Badge variant="secondary" className="font-mono uppercase">
-                  {tag}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {headingsByTag[tag].length} found
-                </span>
+          {(["h1", "h2", "h3"] as const).map((tag) => {
+            const items = headingsByTag[tag];
+            const PREVIEW = 8;
+            const hasMore = items.length > PREVIEW;
+            return (
+              <div key={tag}>
+                <div className="mb-2 flex items-center gap-2">
+                  <Badge variant="secondary" className="font-mono uppercase">
+                    {tag}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {items.length} found
+                  </span>
+                </div>
+                {items.length === 0 ? (
+                  <p className="pl-2 text-sm italic text-muted-foreground">None</p>
+                ) : !hasMore ? (
+                  <ul className="space-y-1 pl-2">
+                    {items.map((h, i) => (
+                      <li key={i} className="text-sm text-foreground">
+                        • {h.text}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <Collapsible>
+                    <ul className="space-y-1 pl-2">
+                      {items.slice(0, PREVIEW).map((h, i) => (
+                        <li key={i} className="text-sm text-foreground">
+                          • {h.text}
+                        </li>
+                      ))}
+                    </ul>
+                    <CollapsibleContent>
+                      <ul className="mt-1 space-y-1 pl-2">
+                        {items.slice(PREVIEW).map((h, i) => (
+                          <li key={i} className="text-sm text-foreground">
+                            • {h.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </CollapsibleContent>
+                    <CollapsibleTrigger className="group mt-2 flex items-center gap-1 pl-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                      <ChevronDown className="h-3 w-3 transition-transform group-data-[state=open]:rotate-180" />
+                      <span className="group-data-[state=open]:hidden">
+                        Show {items.length - PREVIEW} more
+                      </span>
+                      <span className="hidden group-data-[state=open]:inline">Show less</span>
+                    </CollapsibleTrigger>
+                  </Collapsible>
+                )}
               </div>
-              {headingsByTag[tag].length === 0 ? (
-                <p className="pl-2 text-sm italic text-muted-foreground">None</p>
-              ) : (
-                <ul className="space-y-1 pl-2">
-                  {headingsByTag[tag].slice(0, 8).map((h, i) => (
-                    <li key={i} className="text-sm text-foreground">
-                      • {h.text}
-                    </li>
-                  ))}
-                  {headingsByTag[tag].length > 8 && (
-                    <li className="pl-2 text-xs text-muted-foreground">
-                      …and {headingsByTag[tag].length - 8} more
-                    </li>
-                  )}
-                </ul>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
