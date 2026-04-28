@@ -75,13 +75,11 @@ function Index() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
-  const [siteReport, setSiteReport] = useState<SiteAuditReport | null>(null);
-  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const [scansRefreshKey, setScansRefreshKey] = useState(0);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
-  const hasAnyResult = report !== null || siteReport !== null;
+  const hasAnyResult = report !== null;
 
   // Simulated progress while audit runs (caps at 92% until complete)
   useEffect(() => {
