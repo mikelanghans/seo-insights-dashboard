@@ -473,11 +473,20 @@ export function computePageGrade(page: PageAuditReport): OverallGrade {
   return { score, letter, summary, breakdown, topIssues };
 }
 
+export interface RollupIssue {
+  title: string;
+  severity: IssueSeverity;
+  pageCount: number;
+  fix: string;
+  /** URLs of pages affected by this issue group. */
+  pages: string[];
+}
+
 export interface SiteGrade {
   overall: OverallGrade;
   pageGrades: Array<{ page: PageAuditReport; grade: OverallGrade }>;
-  /** Aggregated issue counts across all pages, by title. */
-  issueRollup: Array<{ title: string; severity: IssueSeverity; pageCount: number; fix: string }>;
+  /** Aggregated issue counts across all pages, grouped by issue type. */
+  issueRollup: RollupIssue[];
 }
 
 export function computeSiteGrade(site: SiteAuditReport): SiteGrade {
