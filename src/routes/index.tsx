@@ -61,26 +61,33 @@ function Index() {
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
   const [url, setUrl] = useState("");
+  const [mode, setMode] = useState<ScanMode>("single");
+  const [scope, setScope] = useState<SiteScope>("standard");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
+  const [siteReport, setSiteReport] = useState<SiteAuditReport | null>(null);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
+  const hasAnyResult = report !== null || siteReport !== null;
 
   // Simulated progress while audit runs (caps at 92% until complete)
   useEffect(() => {
     if (!loading) {
-      setProgress(loading ? 0 : report ? 100 : 0);
+      setProgress(loading ? 0 : hasAnyResult ? 100 : 0);
       return;
     }
-    setProgress(8);
+    setProgress(4);
+    // Site scans take longer — slower ramp
+    const tickRate = mode === "site" ? 1200 : 400;
+    const stepFactor = mode === "site" ? 0.02 : 0.06;
     const interval = setInterval(() => {
-      setProgress((p) => (p < 92 ? p + Math.max(1, (92 - p) * 0.06) : p));
-    }, 400);
+      setProgress((p) => (p < 92 ? p + Math.max(0.5, (92 - p) * stepFactor) : p));
+    }, tickRate);
     return () => clearInterval(interval);
-  }, [loading, report]);
+  }, [loading, hasAnyResult, mode]);
 
   async function runAudit(rawUrl?: string) {
     const candidate = rawUrl ?? urlInputRef.current?.value ?? url;
@@ -95,18 +102,25 @@ function Index() {
     setLoading(true);
     setError(null);
     setReport(null);
+    setSiteReport(null);
     try {
-      const response = await fetch("/api/seo-audit", {
+      const endpoint = mode === "site" ? "/api/seo-site-audit" : "/api/seo-audit";
+      const body = mode === "site" ? { url: auditUrl, scope } : { url: auditUrl };
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: auditUrl }),
+        body: JSON.stringify(body),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.error || "Audit failed");
       }
       if (activeAuditIdRef.current !== auditId) return;
-      setReport(data as AuditReport);
+      if (mode === "site") {
+        setSiteReport(data as SiteAuditReport);
+      } else {
+        setReport(data as AuditReport);
+      }
       setProgress(100);
     } catch (err) {
       if (activeAuditIdRef.current !== auditId) return;
