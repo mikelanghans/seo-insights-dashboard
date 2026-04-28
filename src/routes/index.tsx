@@ -172,9 +172,36 @@ function Index() {
             On-page signals, Core Web Vitals, and structured data — analyzed in one click.
           </p>
 
+          {/* Mode toggle */}
+          <div className="mx-auto mt-7 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
+            {([
+              { value: "single", label: "Single page", icon: FileText },
+              { value: "site", label: "Full site", icon: Layers },
+            ] as const).map((opt) => {
+              const Icon = opt.icon;
+              const active = mode === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setMode(opt.value)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                    active
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
           <form
             onSubmit={handleSubmit}
-            className="mx-auto mt-8 flex w-full max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/95 p-2 shadow-[var(--shadow-elegant)] sm:flex-row sm:items-stretch"
+            className="mx-auto mt-5 flex w-full max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/95 p-2 shadow-[var(--shadow-elegant)] sm:flex-row sm:items-stretch"
           >
             <div className="relative flex-1 min-w-0">
               <Globe className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
@@ -183,7 +210,11 @@ function Index() {
                 type="text"
                 inputMode="url"
                 autoComplete="url"
-                placeholder="example.com or https://example.com/page"
+                placeholder={
+                  mode === "site"
+                    ? "example.com (root domain)"
+                    : "example.com or https://example.com/page"
+                }
                 value={url}
                 onChange={(e) => {
                   setUrl(e.target.value);
@@ -197,6 +228,23 @@ function Index() {
                 <CheckCircle2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-success" />
               )}
             </div>
+            {mode === "site" && (
+              <Select value={scope} onValueChange={(v) => setScope(v as SiteScope)} disabled={loading}>
+                <SelectTrigger className="h-13 w-full shrink-0 border-0 bg-muted/50 text-sm font-medium sm:w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(SCOPE_LABELS) as SiteScope[]).map((k) => (
+                    <SelectItem key={k} value={k}>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{SCOPE_LABELS[k].label} scan</span>
+                        <span className="text-xs text-muted-foreground">{SCOPE_LABELS[k].desc}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Button
               type="submit"
               disabled={loading}
