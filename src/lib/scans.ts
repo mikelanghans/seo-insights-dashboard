@@ -14,6 +14,7 @@ export interface SavedScanSummary {
   pagesTotal: number;
   discoveredUrlCount: number;
   errorMessage: string | null;
+  retryScanId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,7 +24,7 @@ export interface SavedScan extends SavedScanSummary {
 }
 
 const SUMMARY_COLUMNS =
-  "id, root_url, scope, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, created_at, updated_at";
+  "id, root_url, scope, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, retry_scan_id, created_at, updated_at";
 
 type SummaryRow = {
   id: string;
@@ -35,6 +36,7 @@ type SummaryRow = {
   pages_total: number;
   discovered_url_count: number;
   error_message: string | null;
+  retry_scan_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -50,6 +52,7 @@ function mapSummary(row: SummaryRow): SavedScanSummary {
     pagesTotal: row.pages_total,
     discoveredUrlCount: row.discovered_url_count,
     errorMessage: row.error_message,
+    retryScanId: row.retry_scan_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
