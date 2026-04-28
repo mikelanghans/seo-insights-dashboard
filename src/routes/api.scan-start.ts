@@ -139,7 +139,8 @@ export const Route = createFileRoute("/api/scan-start")({
         // pending work the moment the response is returned.
         const scanPromise = executeScan({ scanId: inserted.id, url: body.url, scope });
         try {
-          const { ctx } = await import("cloudflare:workers");
+          const mod = (await import(/* @vite-ignore */ "cloudflare:workers")) as { ctx: { waitUntil: (p: Promise<unknown>) => void } };
+          const { ctx } = mod;
           ctx.waitUntil(scanPromise);
         } catch {
           // Not running on Cloudflare (e.g. local Node dev) — fire-and-forget is fine there.
