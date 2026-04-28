@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,20 +25,24 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!url.trim()) return;
+  async function runAudit(rawUrl?: string) {
+    const auditUrl = (rawUrl ?? urlInputRef.current?.value ?? url).trim();
+    if (!auditUrl || loading) {
+      if (!auditUrl) setError("Enter a URL to analyze.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setReport(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("seo-audit", {
-        body: { url: url.trim() },
+        body: { url: auditUrl },
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
@@ -48,6 +52,11 @@ function Index() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    void runAudit();
   }
 
   return (
@@ -87,6 +96,7 @@ function Index() {
             <div className="relative flex-1">
               <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                ref={urlInputRef}
                 type="text"
                 placeholder="example.com or https://example.com/page"
                 value={url}
@@ -94,7 +104,7 @@ function Index() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    handleSubmit(e as unknown as FormEvent);
+                    void runAudit(e.currentTarget.value);
                   }
                 }}
                 disabled={loading}
@@ -103,7 +113,8 @@ function Index() {
             </div>
             <Button
               type="submit"
-              disabled={loading || !url.trim()}
+              onClick={() => void runAudit()}
+              disabled={loading}
               className="h-12 bg-[var(--gradient-hero)] px-6 text-base font-semibold shadow-[var(--shadow-elegant)] hover:opacity-95"
             >
               {loading ? (
