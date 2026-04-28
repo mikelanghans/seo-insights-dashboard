@@ -71,6 +71,7 @@ function Index() {
   const { user, loading: authLoading } = useAuth();
   const [url, setUrl] = useState("https://");
   const [mode, setMode] = useState<ScanMode>("single");
+  const [scanType, setScanType] = useState<ScanType>("seo");
   const [scope, setScope] = useState<SiteScope>("standard");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
