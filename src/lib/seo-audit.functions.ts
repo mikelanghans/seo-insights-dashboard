@@ -25,7 +25,7 @@ function toJsonValue(value: unknown): JsonValue {
   }
 }
 
-function parseOnPage(html: string, finalUrl: string): OnPageReport {
+export function parseOnPage(html: string, finalUrl: string): OnPageReport {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const title = titleMatch ? decodeEntities(titleMatch[1].trim()) : null;
   const htmlTagMatch = html.match(/<html\b[^>]*>/i);
@@ -98,7 +98,7 @@ function parseOnPage(html: string, finalUrl: string): OnPageReport {
   };
 }
 
-function parseSchema(html: string): SchemaItem[] {
+export function parseSchema(html: string): SchemaItem[] {
   const items: SchemaItem[] = [];
   const re = /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   for (const m of html.matchAll(re)) {
@@ -127,7 +127,7 @@ function parseSchema(html: string): SchemaItem[] {
   return items;
 }
 
-async function fetchPageSpeed(url: string, strategy: "mobile" | "desktop"): Promise<PageSpeedReport> {
+export async function fetchPageSpeed(url: string, strategy: "mobile" | "desktop"): Promise<PageSpeedReport> {
   const apiKey = process.env.PAGESPEED_API_KEY;
   const params = new URLSearchParams({ url, strategy });
   for (const cat of ["performance", "seo", "accessibility", "best-practices"]) params.append("category", cat);
@@ -178,7 +178,7 @@ function normalizeAuditUrl(raw: string): string {
   return parsed.toString();
 }
 
-function emptyOnPageReport(finalUrl: string): OnPageReport {
+export function emptyOnPageReport(finalUrl: string): OnPageReport {
   return {
     finalUrl,
     title: null,

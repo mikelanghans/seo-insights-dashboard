@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2, FileText, Layers } from "lucide-react";
 
 function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -22,8 +29,18 @@ import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
 import { SchemaTab } from "@/components/seo/SchemaTab";
 import { GradeCard } from "@/components/seo/GradeCard";
+import { SiteResults } from "@/components/seo/SiteResults";
 import { computeGrade } from "@/lib/seo-grade";
-import type { AuditReport } from "@/lib/seo-types";
+import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
+
+type ScanMode = "single" | "site";
+type SiteScope = "quick" | "standard" | "deep";
+
+const SCOPE_LABELS: Record<SiteScope, { label: string; pages: number; desc: string }> = {
+  quick: { label: "Quick", pages: 25, desc: "up to 25 pages · ~30s" },
+  standard: { label: "Standard", pages: 100, desc: "up to 100 pages · ~2min" },
+  deep: { label: "Deep", pages: 500, desc: "up to 500 pages · several min" },
+};
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -44,26 +61,33 @@ function Index() {
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
   const [url, setUrl] = useState("");
+  const [mode, setMode] = useState<ScanMode>("single");
+  const [scope, setScope] = useState<SiteScope>("standard");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
+  const [siteReport, setSiteReport] = useState<SiteAuditReport | null>(null);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
+  const hasAnyResult = report !== null || siteReport !== null;
 
   // Simulated progress while audit runs (caps at 92% until complete)
   useEffect(() => {
     if (!loading) {
-      setProgress(loading ? 0 : report ? 100 : 0);
+      setProgress(loading ? 0 : hasAnyResult ? 100 : 0);
       return;
     }
-    setProgress(8);
+    setProgress(4);
+    // Site scans take longer — slower ramp
+    const tickRate = mode === "site" ? 1200 : 400;
+    const stepFactor = mode === "site" ? 0.02 : 0.06;
     const interval = setInterval(() => {
-      setProgress((p) => (p < 92 ? p + Math.max(1, (92 - p) * 0.06) : p));
-    }, 400);
+      setProgress((p) => (p < 92 ? p + Math.max(0.5, (92 - p) * stepFactor) : p));
+    }, tickRate);
     return () => clearInterval(interval);
-  }, [loading, report]);
+  }, [loading, hasAnyResult, mode]);
 
   async function runAudit(rawUrl?: string) {
     const candidate = rawUrl ?? urlInputRef.current?.value ?? url;
@@ -78,18 +102,25 @@ function Index() {
     setLoading(true);
     setError(null);
     setReport(null);
+    setSiteReport(null);
     try {
-      const response = await fetch("/api/seo-audit", {
+      const endpoint = mode === "site" ? "/api/seo-site-audit" : "/api/seo-audit";
+      const body = mode === "site" ? { url: auditUrl, scope } : { url: auditUrl };
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: auditUrl }),
+        body: JSON.stringify(body),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.error || "Audit failed");
       }
       if (activeAuditIdRef.current !== auditId) return;
-      setReport(data as AuditReport);
+      if (mode === "site") {
+        setSiteReport(data as SiteAuditReport);
+      } else {
+        setReport(data as AuditReport);
+      }
       setProgress(100);
     } catch (err) {
       if (activeAuditIdRef.current !== auditId) return;
@@ -141,9 +172,36 @@ function Index() {
             On-page signals, Core Web Vitals, and structured data — analyzed in one click.
           </p>
 
+          {/* Mode toggle */}
+          <div className="mx-auto mt-7 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
+            {([
+              { value: "single", label: "Single page", icon: FileText },
+              { value: "site", label: "Full site", icon: Layers },
+            ] as const).map((opt) => {
+              const Icon = opt.icon;
+              const active = mode === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setMode(opt.value)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                    active
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
           <form
             onSubmit={handleSubmit}
-            className="mx-auto mt-8 flex w-full max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/95 p-2 shadow-[var(--shadow-elegant)] sm:flex-row sm:items-stretch"
+            className="mx-auto mt-5 flex w-full max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/95 p-2 shadow-[var(--shadow-elegant)] sm:flex-row sm:items-stretch"
           >
             <div className="relative flex-1 min-w-0">
               <Globe className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
@@ -152,7 +210,11 @@ function Index() {
                 type="text"
                 inputMode="url"
                 autoComplete="url"
-                placeholder="example.com or https://example.com/page"
+                placeholder={
+                  mode === "site"
+                    ? "example.com (root domain)"
+                    : "example.com or https://example.com/page"
+                }
                 value={url}
                 onChange={(e) => {
                   setUrl(e.target.value);
@@ -166,6 +228,23 @@ function Index() {
                 <CheckCircle2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-success" />
               )}
             </div>
+            {mode === "site" && (
+              <Select value={scope} onValueChange={(v) => setScope(v as SiteScope)} disabled={loading}>
+                <SelectTrigger className="h-13 w-full shrink-0 border-0 bg-muted/50 text-sm font-medium sm:w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(SCOPE_LABELS) as SiteScope[]).map((k) => (
+                    <SelectItem key={k} value={k}>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{SCOPE_LABELS[k].label} scan</span>
+                        <span className="text-xs text-muted-foreground">{SCOPE_LABELS[k].desc}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Button
               type="submit"
               disabled={loading}
@@ -209,15 +288,25 @@ function Index() {
                 <div className="absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary" />
               </div>
               <div className="text-center">
-                <p className="text-base font-semibold text-foreground">Running audit…</p>
+                <p className="text-base font-semibold text-foreground">
+                  {mode === "site" ? "Scanning site…" : "Running audit…"}
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Crawling page, parsing schema, and testing PageSpeed (mobile + desktop)
+                  {mode === "site"
+                    ? `Mapping URLs and auditing up to ${SCOPE_LABELS[scope].pages} pages`
+                    : "Crawling page, parsing schema, and testing PageSpeed (mobile + desktop)"}
                 </p>
               </div>
               <div className="w-full max-w-md space-y-2">
                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>This usually takes 10–30 seconds</span>
+                  <span>
+                    {mode === "site"
+                      ? `${SCOPE_LABELS[scope].label} scan · usually ${
+                          scope === "quick" ? "30s–1min" : scope === "standard" ? "1–3 min" : "3–8 min"
+                        }`
+                      : "This usually takes 10–30 seconds"}
+                  </span>
                   <span className="tabular-nums">{Math.round(progress)}%</span>
                 </div>
               </div>
@@ -288,8 +377,11 @@ function Index() {
           </section>
         )}
 
+        {/* Site results */}
+        {siteReport && !loading && <SiteResults report={siteReport} />}
+
         {/* Empty state */}
-        {!report && !loading && !error && (
+        {!report && !siteReport && !loading && !error && (
           <section className="grid gap-4 sm:grid-cols-3">
             {[
               { icon: Globe, title: "On-Page SEO", desc: "Title, meta, headings, canonical, robots & alt tags" },
