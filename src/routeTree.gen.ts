@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSeoSiteAuditRouteImport } from './routes/api.seo-site-audit'
 import { Route as ApiSeoScanUrlsRouteImport } from './routes/api.seo-scan-urls'
 import { Route as ApiSeoAuditRouteImport } from './routes/api.seo-audit'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +43,14 @@ const ApiSeoAuditRoute = ApiSeoAuditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
@@ -50,6 +58,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
@@ -58,14 +67,21 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/api/seo-audit'
     | '/api/seo-scan-urls'
     | '/api/seo-site-audit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/seo-audit' | '/api/seo-scan-urls' | '/api/seo-site-audit'
+  to:
+    | '/'
+    | '/auth'
+    | '/api/seo-audit'
+    | '/api/seo-scan-urls'
+    | '/api/seo-site-audit'
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/api/seo-audit'
     | '/api/seo-scan-urls'
     | '/api/seo-site-audit'
@@ -73,6 +89,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   ApiSeoAuditRoute: typeof ApiSeoAuditRoute
   ApiSeoScanUrlsRoute: typeof ApiSeoScanUrlsRoute
   ApiSeoSiteAuditRoute: typeof ApiSeoSiteAuditRoute
@@ -80,6 +97,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -113,6 +137,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   ApiSeoAuditRoute: ApiSeoAuditRoute,
   ApiSeoScanUrlsRoute: ApiSeoScanUrlsRoute,
   ApiSeoSiteAuditRoute: ApiSeoSiteAuditRoute,
