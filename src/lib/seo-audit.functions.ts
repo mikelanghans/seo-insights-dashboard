@@ -179,26 +179,50 @@ function normalizeAuditUrl(raw: string): string {
   return parsed.toString();
 }
 
+async function fetchAuditHtml(url: string): Promise<{ finalUrl: string; status: number; html: string }> {
+  const targets = [url];
+  const parsed = new URL(url);
+  if (!parsed.hostname.startsWith("www.")) {
+    const wwwUrl = new URL(url);
+    wwwUrl.hostname = `www.${parsed.hostname}`;
+    targets.push(wwwUrl.toString());
+  }
+
+  let lastError = "Load failed";
+  for (const target of targets) {
+    try {
+      const response = await fetch(target, {
+        redirect: "follow",
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      });
+      const html = await response.text();
+      return { finalUrl: response.url || target, status: response.status, html };
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "Load failed";
+    }
+  }
+
+  throw new Error(`Could not load that page. The site may be blocking crawlers or temporarily unavailable. (${lastError})`);
+}
+
 export const runSeoAudit = createServerFn({ method: "POST" })
   .inputValidator((input: { url: string }) => input)
   .handler(async ({ data }) => {
     const url = normalizeAuditUrl(data.url);
-    const pageResponse = await fetch(url, {
-      redirect: "follow",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://lovable.app)",
-        Accept: "text/html,application/xhtml+xml",
-      },
-    });
-    const html = await pageResponse.text();
+    const page = await fetchAuditHtml(url);
     const [mobile, desktop] = await Promise.all([fetchPageSpeed(url, "mobile"), fetchPageSpeed(url, "desktop")]);
 
     return {
       requestedUrl: url,
       fetchedAt: new Date().toISOString(),
-      httpStatus: pageResponse.status,
-      onPage: parseOnPage(html, pageResponse.url || url),
-      schema: parseSchema(html),
+      httpStatus: page.status,
+      onPage: parseOnPage(page.html, page.finalUrl),
+      schema: parseSchema(page.html),
       pageSpeed: { mobile, desktop },
     };
   });
