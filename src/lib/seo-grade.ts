@@ -437,3 +437,128 @@ export function computeGrade(report: AuditReport): OverallGrade {
 
   return { score, letter, summary, breakdown, topIssues };
 }
+
+/** Compute a grade for a single page in a site scan (no Speed component — runs on root only). */
+export function computePageGrade(page: PageAuditReport): OverallGrade {
+  const breakdown = [scoreOnPage(page), scoreSchema(page), scoreAEO(page)];
+  // Re-weight to 100% across the 3 categories (was 25 + 25 + 25 = 75 of original 100).
+  const totalWeight = breakdown.reduce((s, b) => s + b.weight, 0);
+  const score = Math.round(
+    breakdown.reduce((s, b) => s + b.score * (b.weight / totalWeight), 0),
+  );
+  const letter = letterFor(score);
+  const summary =
+    score >= 85
+      ? "Excellent — strong SEO and AEO signals."
+      : score >= 70
+        ? "Good — minor improvements available."
+        : score >= 50
+          ? "Needs work — several SEO/AEO gaps."
+          : "Critical — major issues holding this page back.";
+  const topIssues = breakdown
+    .flatMap((b) => b.issues)
+    .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
+  return { score, letter, summary, breakdown, topIssues };
+}
+
+export interface SiteGrade {
+  overall: OverallGrade;
+  pageGrades: Array<{ page: PageAuditReport; grade: OverallGrade }>;
+  /** Aggregated issue counts across all pages, by title. */
+  issueRollup: Array<{ title: string; severity: IssueSeverity; pageCount: number; fix: string }>;
+}
+
+export function computeSiteGrade(site: SiteAuditReport): SiteGrade {
+  const pageGrades = site.pages.map((page) => ({ page, grade: computePageGrade(page) }));
+
+  // Average per-page grades, then weight homepage speed (if present) at 25% of overall.
+  const avgPageScore =
+    pageGrades.length > 0
+      ? pageGrades.reduce((s, p) => s + p.grade.score, 0) / pageGrades.length
+      : 0;
+
+  let score = avgPageScore;
+  let speedBreakdown: GradeBreakdown | null = null;
+  if (site.homepageSpeed) {
+    speedBreakdown = scoreSpeed({
+      requestedUrl: site.rootUrl,
+      fetchedAt: site.fetchedAt,
+      httpStatus: 200,
+      onPage: site.pages[0]?.onPage ?? ({} as AuditReport["onPage"]),
+      schema: [],
+      pageSpeed: site.homepageSpeed,
+    });
+    score = avgPageScore * 0.75 + speedBreakdown.score * 0.25;
+  }
+  score = Math.round(score);
+  const letter = letterFor(score);
+
+  // Build a site-level breakdown by averaging each category across pages.
+  const categories = ["On-Page SEO", "Structured Data", "AEO (Answer Engine)"];
+  const breakdown: GradeBreakdown[] = categories.map((label) => {
+    const matching = pageGrades.flatMap((p) =>
+      p.grade.breakdown.filter((b) => b.label === label),
+    );
+    const avg =
+      matching.length > 0 ? matching.reduce((s, b) => s + b.score, 0) / matching.length : 0;
+    const weight = matching[0]?.weight ?? 0.25;
+    const totalIssues = matching.reduce((s, b) => s + b.issues.length, 0);
+    return {
+      label,
+      score: Math.round(avg),
+      weight,
+      detail: `Avg across ${matching.length} page${matching.length === 1 ? "" : "s"} · ${totalIssues} issue${totalIssues === 1 ? "" : "s"} total`,
+      issues: [],
+    };
+  });
+  if (speedBreakdown) {
+    breakdown.splice(1, 0, {
+      ...speedBreakdown,
+      detail: `Homepage only · ${speedBreakdown.detail}`,
+    });
+  }
+
+  // Roll up issues by title across all pages
+  const rollupMap = new Map<
+    string,
+    { title: string; severity: IssueSeverity; pageCount: number; fix: string }
+  >();
+  for (const { grade } of pageGrades) {
+    const seenForPage = new Set<string>();
+    for (const issue of grade.topIssues) {
+      if (seenForPage.has(issue.title)) continue;
+      seenForPage.add(issue.title);
+      const existing = rollupMap.get(issue.title);
+      if (existing) {
+        existing.pageCount += 1;
+      } else {
+        rollupMap.set(issue.title, {
+          title: issue.title,
+          severity: issue.severity,
+          pageCount: 1,
+          fix: issue.fix,
+        });
+      }
+    }
+  }
+  const issueRollup = [...rollupMap.values()].sort((a, b) => {
+    const sev = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
+    if (sev !== 0) return sev;
+    return b.pageCount - a.pageCount;
+  });
+
+  const summary =
+    score >= 85
+      ? `Excellent — strong SEO/AEO signals across ${pageGrades.length} pages.`
+      : score >= 70
+        ? `Good — targeted improvements will lift the site further.`
+        : score >= 50
+          ? `Needs work — gaps in SEO and answer-engine readiness across the site.`
+          : `Critical — major SEO/AEO issues across the site.`;
+
+  return {
+    overall: { score, letter, summary, breakdown, topIssues: [] },
+    pageGrades,
+    issueRollup,
+  };
+}
