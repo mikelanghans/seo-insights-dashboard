@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from "react";
 import { AlertCircle, Copy, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScanErrorDrawer } from "@/components/ScanErrorDrawer";
 import { toast } from "sonner";
 
 interface ErrorContext {
