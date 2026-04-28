@@ -391,44 +391,50 @@ function Index() {
               </div>
             )}
 
-            <GradeCard grade={computeGrade(report)} />
+            {report.auditType === "a11y" ? (
+              <AccessibilityTab report={report.accessibility} />
+            ) : (
+              <>
+                <GradeCard grade={computeGrade(report)} />
 
-            <Tabs defaultValue="onpage" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-card shadow-[var(--shadow-card)] h-auto p-1">
-                <TabsTrigger value="onpage" className="gap-2 py-2.5">
-                  <Globe className="h-4 w-4" />
-                  <span className="hidden sm:inline">On-Page SEO</span>
-                  <span className="sm:hidden">On-Page</span>
-                </TabsTrigger>
-                <TabsTrigger value="speed" className="gap-2 py-2.5">
-                  <Gauge className="h-4 w-4" />
-                  <span className="hidden sm:inline">Page Speed</span>
-                  <span className="sm:hidden">Speed</span>
-                </TabsTrigger>
-                <TabsTrigger value="a11y" className="gap-2 py-2.5">
-                  <Eye className="h-4 w-4" />
-                  <span className="hidden sm:inline">Accessibility</span>
-                  <span className="sm:hidden">A11y</span>
-                </TabsTrigger>
-                <TabsTrigger value="schema" className="gap-2 py-2.5">
-                  <Code2 className="h-4 w-4" />
-                  Schema
-                </TabsTrigger>
-              </TabsList>
+                <Tabs defaultValue="onpage" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4 bg-card shadow-[var(--shadow-card)] h-auto p-1">
+                    <TabsTrigger value="onpage" className="gap-2 py-2.5">
+                      <Globe className="h-4 w-4" />
+                      <span className="hidden sm:inline">On-Page SEO</span>
+                      <span className="sm:hidden">On-Page</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="speed" className="gap-2 py-2.5">
+                      <Gauge className="h-4 w-4" />
+                      <span className="hidden sm:inline">Page Speed</span>
+                      <span className="sm:hidden">Speed</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="a11y" className="gap-2 py-2.5">
+                      <Eye className="h-4 w-4" />
+                      <span className="hidden sm:inline">Accessibility</span>
+                      <span className="sm:hidden">A11y</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="schema" className="gap-2 py-2.5">
+                      <Code2 className="h-4 w-4" />
+                      Schema
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="onpage" className="mt-6">
-                <OnPageTab data={report.onPage} />
-              </TabsContent>
-              <TabsContent value="speed" className="mt-6">
-                <PageSpeedTab mobile={report.pageSpeed.mobile} desktop={report.pageSpeed.desktop} />
-              </TabsContent>
-              <TabsContent value="a11y" className="mt-6">
-                <AccessibilityTab report={report.accessibility} />
-              </TabsContent>
-              <TabsContent value="schema" className="mt-6">
-                <SchemaTab items={report.schema} />
-              </TabsContent>
-            </Tabs>
+                  <TabsContent value="onpage" className="mt-6">
+                    <OnPageTab data={report.onPage} />
+                  </TabsContent>
+                  <TabsContent value="speed" className="mt-6">
+                    <PageSpeedTab mobile={report.pageSpeed.mobile} desktop={report.pageSpeed.desktop} />
+                  </TabsContent>
+                  <TabsContent value="a11y" className="mt-6">
+                    <AccessibilityTab report={report.accessibility} />
+                  </TabsContent>
+                  <TabsContent value="schema" className="mt-6">
+                    <SchemaTab items={report.schema} />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
           </section>
         )}
 
