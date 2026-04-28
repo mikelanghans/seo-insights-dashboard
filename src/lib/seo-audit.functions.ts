@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/start-client-core";
-import type { AuditReport, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
+import type { OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
 
 function decodeEntities(str: string): string {
   return str
@@ -173,7 +173,7 @@ function normalizeAuditUrl(raw: string): string {
 
 export const runSeoAudit = createServerFn({ method: "POST" })
   .inputValidator((input: { url: string }) => input)
-  .handler(async ({ data }): Promise<AuditReport> => {
+  .handler(async ({ data }) => {
     const url = normalizeAuditUrl(data.url);
     const pageResponse = await fetch(url, {
       redirect: "follow",
