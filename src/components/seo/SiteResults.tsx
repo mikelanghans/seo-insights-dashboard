@@ -213,3 +213,171 @@ export function SiteResults({ report }: { report: SiteAuditReport }) {
     </div>
   );
 }
+
+type SeverityFilter = "all" | IssueSeverity;
+
+function shortenUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return (u.pathname + u.search) || "/";
+  } catch {
+    return url;
+  }
+}
+
+function SiteIssueRollup({ issues }: { issues: RollupIssue[] }) {
+  const [filter, setFilter] = useState<SeverityFilter>("all");
+  const [openKey, setOpenKey] = useState<string | null>(null);
+
+  const counts = useMemo(() => {
+    const c: Record<IssueSeverity, number> = { critical: 0, warning: 0, info: 0 };
+    for (const i of issues) c[i.severity] += 1;
+    return c;
+  }, [issues]);
+
+  const filtered = useMemo(
+    () => (filter === "all" ? issues : issues.filter((i) => i.severity === filter)),
+    [issues, filter],
+  );
+
+  // Group filtered issues by severity for sectioned display
+  const grouped = useMemo(() => {
+    const g: Record<IssueSeverity, RollupIssue[]> = { critical: [], warning: [], info: [] };
+    for (const i of filtered) g[i.severity].push(i);
+    return g;
+  }, [filtered]);
+
+  const sevOrder: IssueSeverity[] = ["critical", "warning", "info"];
+
+  const filterPills: Array<{ key: SeverityFilter; label: string; count: number }> = [
+    { key: "all", label: "All", count: issues.length },
+    { key: "critical", label: "Critical", count: counts.critical },
+    { key: "warning", label: "Warnings", count: counts.warning },
+    { key: "info", label: "Info", count: counts.info },
+  ];
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Issues across the site</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Same issues grouped — fix once, improve every affected page.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {filterPills.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => setFilter(p.key)}
+              disabled={p.count === 0 && p.key !== "all"}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                filter === p.key
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-background text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:hover:text-muted-foreground"
+              }`}
+            >
+              {p.label}
+              <span
+                className={`tabular-nums ${
+                  filter === p.key ? "text-background/70" : "text-muted-foreground/70"
+                }`}
+              >
+                {p.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          No issues in this category.
+        </p>
+      ) : (
+        <div className="space-y-5">
+          {sevOrder.map((sev) => {
+            const list = grouped[sev];
+            if (list.length === 0) return null;
+            const sevMeta = SEV_STYLES[sev];
+            return (
+              <div key={sev}>
+                <div className="mb-2 flex items-center gap-2">
+                  <sevMeta.icon className={`h-4 w-4 ${sevMeta.className}`} />
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                    {sevMeta.label}
+                  </h4>
+                  <span className="text-xs text-muted-foreground">
+                    ({list.length} issue{list.length === 1 ? "" : "s"})
+                  </span>
+                </div>
+                <ul className="divide-y divide-border rounded-lg border border-border">
+                  {list.map((issue) => {
+                    const key = `${sev}:${issue.title}`;
+                    const isOpen = openKey === key;
+                    return (
+                      <li key={key}>
+                        <Collapsible
+                          open={isOpen}
+                          onOpenChange={(o) => setOpenKey(o ? key : null)}
+                        >
+                          <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-muted/40">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-foreground">
+                                {issue.title}
+                              </p>
+                            </div>
+                            <Badge variant="secondary" className="shrink-0 text-xs tabular-nums">
+                              {issue.pageCount} {issue.pageCount === 1 ? "page" : "pages"}
+                            </Badge>
+                            <ChevronDown
+                              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                                isOpen ? "rotate-180" : ""
+                              }`}
+                            />
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="border-t border-border bg-muted/30 px-3 py-3">
+                              <p className="mb-3 text-xs text-muted-foreground">
+                                <span className="font-medium text-foreground">How to fix:</span>{" "}
+                                {issue.fix}
+                              </p>
+                              <p className="mb-1.5 text-xs font-medium text-foreground">
+                                Affected pages
+                              </p>
+                              <ul className="space-y-1">
+                                {issue.pages.slice(0, 20).map((url) => (
+                                  <li key={url}>
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                    >
+                                      <span className="truncate">{shortenUrl(url)}</span>
+                                      <ExternalLink className="h-3 w-3 shrink-0" />
+                                    </a>
+                                  </li>
+                                ))}
+                                {issue.pages.length > 20 && (
+                                  <li className="text-xs text-muted-foreground">
+                                    + {issue.pages.length - 20} more
+                                  </li>
+                                )}
+                              </ul>
+                            </div>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
