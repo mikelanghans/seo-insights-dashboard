@@ -42,10 +42,14 @@ export interface SchemaItem {
   raw: JsonValue;
 }
 
+export type AuditType = "seo" | "a11y";
+
 export interface AuditReport {
   requestedUrl: string;
   fetchedAt: string;
   httpStatus: number;
+  /** Which scan was requested. Defaults to "seo" for backward-compat. */
+  auditType?: AuditType;
   onPage: OnPageReport;
   schema: SchemaItem[];
   pageSpeed: { mobile: PageSpeedReport; desktop: PageSpeedReport };
