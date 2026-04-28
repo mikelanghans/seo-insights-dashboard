@@ -132,6 +132,13 @@ export function ScanErrorDrawer({
 
   const canRetry = !!scan && !retrying && scan.status !== "running" && scan.status !== "pending";
 
+  const statusDot = (status: string) => {
+    if (status === "complete") return "bg-emerald-500";
+    if (status === "failed") return "bg-destructive";
+    if (status === "running" || status === "pending") return "bg-amber-500 animate-pulse";
+    return "bg-muted-foreground";
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
