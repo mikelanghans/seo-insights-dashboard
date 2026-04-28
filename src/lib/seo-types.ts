@@ -32,9 +32,11 @@ export interface PageSpeedReport {
   error?: string;
 }
 
+export type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
+
 export interface SchemaItem {
   type: string;
-  raw: unknown;
+  raw: JsonValue;
 }
 
 export interface AuditReport {

@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2 } from "lucide-react";
+import { runSeoAudit } from "@/lib/seo-audit.functions";
 
 function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -42,6 +43,7 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
+  const runSeoAuditFn = useServerFn(runSeoAudit);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -78,11 +80,7 @@ function Index() {
     setError(null);
     setReport(null);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("seo-audit", {
-        body: { url: auditUrl },
-      });
-      if (fnError) throw fnError;
-      if (data?.error) throw new Error(data.error);
+      const data = await runSeoAuditFn({ data: { url: auditUrl } });
       if (activeAuditIdRef.current !== auditId) return;
       setReport(data as AuditReport);
       setProgress(100);
