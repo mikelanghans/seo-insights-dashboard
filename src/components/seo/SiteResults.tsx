@@ -72,7 +72,7 @@ export function SiteResults({ report }: { report: SiteAuditReport }) {
       </div>
 
       {/* Site-wide grade card */}
-      <GradeCard grade={site.overall} />
+      <GradeCard grade={site.overall} hideIssuesSection />
 
       {/* Site-wide issue rollup */}
       {site.issueRollup.length > 0 && (
