@@ -158,12 +158,6 @@ function Index() {
                   setUrl(e.target.value);
                   if (error) setError(null);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    void runAudit(e.currentTarget.value);
-                  }
-                }}
                 disabled={loading}
                 aria-invalid={url.length > 0 && !isValid}
                 className="h-13 border-0 bg-transparent pl-11 pr-10 text-base shadow-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -173,8 +167,7 @@ function Index() {
               )}
             </div>
             <Button
-              type="button"
-              onClick={() => void runAudit()}
+              type="submit"
               disabled={loading}
               aria-disabled={loading}
               className="h-13 w-full shrink-0 border-0 !bg-none px-6 text-base font-semibold !text-white shadow-[var(--shadow-elegant)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-w-[150px]"
