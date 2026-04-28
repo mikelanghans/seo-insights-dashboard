@@ -139,7 +139,8 @@ export const Route = createFileRoute("/api/scan-start")({
         // pending work the moment the response is returned.
         const scanPromise = executeScan({ scanId: inserted.id, url: body.url, scope });
         try {
-          const mod = (await import(/* @vite-ignore */ "cloudflare:workers")) as { ctx: { waitUntil: (p: Promise<unknown>) => void } };
+          const modName = "cloudflare:workers";
+          const mod = (await import(/* @vite-ignore */ modName)) as { ctx: { waitUntil: (p: Promise<unknown>) => void } };
           const { ctx } = mod;
           ctx.waitUntil(scanPromise);
         } catch {
