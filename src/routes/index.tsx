@@ -60,7 +60,7 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState("https://");
   const [mode, setMode] = useState<ScanMode>("single");
   const [scope, setScope] = useState<SiteScope>("standard");
   const [loading, setLoading] = useState(false);
@@ -212,13 +212,19 @@ function Index() {
                 autoComplete="url"
                 placeholder={
                   mode === "site"
-                    ? "example.com (root domain)"
-                    : "example.com or https://example.com/page"
+                    ? "https://example.com"
+                    : "https://example.com/page"
                 }
                 value={url}
                 onChange={(e) => {
                   setUrl(e.target.value);
                   if (error) setError(null);
+                }}
+                onFocus={(e) => {
+                  if (e.target.value === "https://") {
+                    const len = e.target.value.length;
+                    e.target.setSelectionRange(len, len);
+                  }
                 }}
                 disabled={loading}
                 aria-invalid={url.length > 0 && !isValid}
