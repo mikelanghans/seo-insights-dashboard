@@ -119,6 +119,7 @@ export function ScanErrorDrawer({
     setRetrying(false);
     toast.success("Scan re-queued");
     setActiveScanId(result.scanId);
+    setRefreshKey((k) => k + 1);
   };
 
   const payload = {
