@@ -179,6 +179,25 @@ function normalizeAuditUrl(raw: string): string {
   return parsed.toString();
 }
 
+function emptyOnPageReport(finalUrl: string): OnPageReport {
+  return {
+    finalUrl,
+    title: null,
+    titleLength: 0,
+    metaDescription: null,
+    metaDescriptionLength: 0,
+    canonical: null,
+    robots: null,
+    lang: null,
+    viewport: null,
+    headings: [],
+    h1Count: 0,
+    images: { total: 0, missingAlt: 0, missingAltSrcs: [] },
+    openGraph: {},
+    twitter: {},
+  };
+}
+
 async function fetchAuditHtml(url: string): Promise<{ finalUrl: string; status: number; html: string }> {
   const targets = [url];
   const parsed = new URL(url);
@@ -214,15 +233,27 @@ export const runSeoAudit = createServerFn({ method: "POST" })
   .inputValidator((input: { url: string }) => input)
   .handler(async ({ data }) => {
     const url = normalizeAuditUrl(data.url);
-    const page = await fetchAuditHtml(url);
-    const [mobile, desktop] = await Promise.all([fetchPageSpeed(url, "mobile"), fetchPageSpeed(url, "desktop")]);
+    const [pageResult, mobile, desktop] = await Promise.allSettled([
+      fetchAuditHtml(url),
+      fetchPageSpeed(url, "mobile"),
+      fetchPageSpeed(url, "desktop"),
+    ]);
+    const page = pageResult.status === "fulfilled" ? pageResult.value : null;
+    const mobileResult = mobile.status === "fulfilled" ? mobile.value : await fetchPageSpeed(url, "mobile");
+    const desktopResult = desktop.status === "fulfilled" ? desktop.value : await fetchPageSpeed(url, "desktop");
+    const crawlError = pageResult.status === "rejected"
+      ? pageResult.reason instanceof Error
+        ? pageResult.reason.message
+        : "Could not load that page."
+      : undefined;
 
     return {
       requestedUrl: url,
       fetchedAt: new Date().toISOString(),
-      httpStatus: page.status,
-      onPage: parseOnPage(page.html, page.finalUrl),
-      schema: parseSchema(page.html),
-      pageSpeed: { mobile, desktop },
+      httpStatus: page?.status ?? 0,
+      onPage: page ? parseOnPage(page.html, page.finalUrl) : emptyOnPageReport(url),
+      schema: page ? parseSchema(page.html) : [],
+      pageSpeed: { mobile: mobileResult, desktop: desktopResult },
+      crawlError,
     };
   });
