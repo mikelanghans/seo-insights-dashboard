@@ -6,8 +6,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Loader2 } from "lucide-react";
-import { getScanStatus, type SavedScanSummary } from "@/lib/scans";
+import { Button } from "@/components/ui/button";
+import { Loader2, RotateCw } from "lucide-react";
+import { toast } from "sonner";
+import { getScanStatus, startScan, type SavedScanSummary } from "@/lib/scans";
 
 interface Props {
   open: boolean;
@@ -26,37 +28,76 @@ export function ScanErrorDrawer({
   pathname,
   timestamp,
 }: Props) {
+  const [activeScanId, setActiveScanId] = useState<string | null>(scanId);
   const [scan, setScan] = useState<SavedScanSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
+  // Reset tracked scan whenever drawer opens with a new error.
   useEffect(() => {
-    if (!open || !scanId) {
+    if (open) setActiveScanId(scanId);
+  }, [open, scanId]);
+
+  // Load + poll the currently tracked scan.
+  useEffect(() => {
+    if (!open || !activeScanId) {
       setScan(null);
       setNotFound(false);
       return;
     }
     let cancelled = false;
-    setLoading(true);
-    setNotFound(false);
-    getScanStatus(scanId)
-      .then((s) => {
-        if (cancelled) return;
-        if (!s) setNotFound(true);
-        else setScan(s);
-      })
-      .finally(() => !cancelled && setLoading(false));
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const tick = async (initial: boolean) => {
+      if (initial) setLoading(true);
+      const s = await getScanStatus(activeScanId);
+      if (cancelled) return;
+      if (!s) {
+        setNotFound(true);
+        setScan(null);
+      } else {
+        setNotFound(false);
+        setScan(s);
+      }
+      if (initial) setLoading(false);
+      if (s && (s.status === "pending" || s.status === "running")) {
+        timer = setTimeout(() => tick(false), 2000);
+      }
+    };
+
+    void tick(true);
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
-  }, [open, scanId]);
+  }, [open, activeScanId]);
+
+  const handleRetry = async () => {
+    if (!scan) {
+      toast.error("No saved scan to retry.");
+      return;
+    }
+    setRetrying(true);
+    const result = await startScan({ rootUrl: scan.rootUrl, scope: scan.scope });
+    setRetrying(false);
+    if ("error" in result) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Scan re-queued");
+    setActiveScanId(result.scanId);
+  };
 
   const payload = {
-    scanId,
+    scanId: activeScanId,
+    originalScanId: scanId,
     pathname,
     errorMessage,
     timestamp,
   };
+
+  const canRetry = !!scan && !retrying && scan.status !== "running" && scan.status !== "pending";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -70,10 +111,29 @@ export function ScanErrorDrawer({
 
         <div className="mt-6 space-y-6 text-sm">
           <section>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Saved scan status
-            </h3>
-            {!scanId ? (
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Saved scan status
+              </h3>
+              {scan && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleRetry}
+                  disabled={!canRetry}
+                  className="h-7 gap-1.5 px-2 text-xs"
+                >
+                  {retrying ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RotateCw className="h-3.5 w-3.5" />
+                  )}
+                  Retry scan
+                </Button>
+              )}
+            </div>
+            {!activeScanId ? (
               <p className="text-muted-foreground">
                 No scan ID was associated with this error.
               </p>
@@ -83,10 +143,12 @@ export function ScanErrorDrawer({
               </div>
             ) : notFound ? (
               <p className="text-muted-foreground">
-                No saved scan found for ID <code className="font-mono">{scanId}</code>.
+                No saved scan found for ID <code className="font-mono">{activeScanId}</code>.
               </p>
             ) : scan ? (
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+                <dt className="text-muted-foreground">Scan ID</dt>
+                <dd className="break-all font-mono text-xs">{scan.id}</dd>
                 <dt className="text-muted-foreground">Status</dt>
                 <dd className="font-mono">{scan.status}</dd>
                 <dt className="text-muted-foreground">Phase</dt>
@@ -113,6 +175,12 @@ export function ScanErrorDrawer({
                 )}
               </dl>
             ) : null}
+            {activeScanId && activeScanId !== scanId && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Now tracking retry scan. Original scan ID:{" "}
+                <code className="font-mono">{scanId}</code>
+              </p>
+            )}
           </section>
 
           <section>
@@ -128,3 +196,4 @@ export function ScanErrorDrawer({
     </Sheet>
   );
 }
+
