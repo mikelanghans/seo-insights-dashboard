@@ -114,8 +114,6 @@ function Index() {
     setLoading(true);
     setError(null);
     setReport(null);
-    setSiteReport(null);
-    setCurrentScanId(null);
     try {
       if (mode === "site") {
         // Async flow: server creates a pending scan row, we redirect to its detail page where progress polls live.
