@@ -91,9 +91,14 @@ function Index() {
                 placeholder="example.com or https://example.com/page"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSubmit(e as unknown as FormEvent);
+                  }
+                }}
                 disabled={loading}
                 className="h-12 pl-10 text-base shadow-[var(--shadow-card)]"
-                required
               />
             </div>
             <Button
