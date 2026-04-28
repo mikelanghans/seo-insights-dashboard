@@ -48,3 +48,26 @@ export interface AuditReport {
   pageSpeed: { mobile: PageSpeedReport; desktop: PageSpeedReport };
   crawlError?: string;
 }
+
+/** Lightweight per-page report used in site-wide scans (no PageSpeed to keep cost reasonable). */
+export interface PageAuditReport {
+  requestedUrl: string;
+  fetchedAt: string;
+  httpStatus: number;
+  onPage: OnPageReport;
+  schema: SchemaItem[];
+  crawlError?: string;
+}
+
+export interface SiteAuditReport {
+  rootUrl: string;
+  fetchedAt: string;
+  pagesRequested: number;
+  pagesScanned: number;
+  pages: PageAuditReport[];
+  /** Total URLs Firecrawl discovered (may be larger than pagesScanned). */
+  discoveredUrlCount: number;
+  /** PageSpeed for the root URL (run once to keep API costs reasonable). */
+  homepageSpeed?: { mobile: PageSpeedReport; desktop: PageSpeedReport };
+  warnings?: string[];
+}
