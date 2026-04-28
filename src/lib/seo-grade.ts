@@ -436,7 +436,8 @@ const SEVERITY_RANK: Record<IssueSeverity, number> = { critical: 0, warning: 1, 
 
 export function computeGrade(report: AuditReport): OverallGrade {
   const breakdown = [scoreOnPage(report), scoreSpeed(report), scoreSchema(report), scoreAEO(report)];
-  const total = breakdown.reduce((sum, b) => sum + b.score * b.weight, 0);
+  const totalWeight = breakdown.reduce((sum, b) => sum + b.weight, 0) || 1;
+  const total = breakdown.reduce((sum, b) => sum + b.score * (b.weight / totalWeight), 0);
   const score = Math.round(total);
   const letter = letterFor(score);
   const summary =
