@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
-import { ExternalLink, ChevronDown, AlertTriangle, AlertCircle, Info } from "lucide-react";
+import { ExternalLink, ChevronDown, AlertTriangle, AlertCircle, Info, Loader2, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +28,13 @@ function letterColor(letter: string): string {
 
 type SortKey = "score" | "url" | "issues";
 
-export function SiteResults({ report }: { report: SiteAuditReport }) {
+export function SiteResults({
+  report,
+  onReportUpdate,
+}: {
+  report: SiteAuditReport;
+  onReportUpdate?: (next: SiteAuditReport) => void;
+}) {
   const site = useMemo(() => computeSiteGrade(report), [report]);
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -210,6 +218,11 @@ export function SiteResults({ report }: { report: SiteAuditReport }) {
           })}
         </ul>
       </div>
+
+      {/* Scan more pages */}
+      {onReportUpdate && (
+        <ScanMorePages report={report} onReportUpdate={onReportUpdate} />
+      )}
     </div>
   );
 }
@@ -378,6 +391,212 @@ function SiteIssueRollup({ issues }: { issues: RollupIssue[] }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+const MAX_SELECTABLE = 50;
+
+function ScanMorePages({
+  report,
+  onReportUpdate,
+}: {
+  report: SiteAuditReport;
+  onReportUpdate: (next: SiteAuditReport) => void;
+}) {
+  const scannedSet = useMemo(
+    () => new Set(report.pages.map((p) => p.requestedUrl)),
+    [report.pages],
+  );
+  const unscanned = useMemo(
+    () => (report.discoveredUrls ?? []).filter((u) => !scannedSet.has(u)),
+    [report.discoveredUrls, scannedSet],
+  );
+
+  const [filter, setFilter] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return unscanned;
+    return unscanned.filter((u) => u.toLowerCase().includes(q));
+  }, [unscanned, filter]);
+
+  if (unscanned.length === 0) return null;
+
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((u) => selected.has(u));
+  const overLimit = selected.size > MAX_SELECTABLE;
+
+  function toggleOne(url: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  }
+
+  function selectAllFiltered() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const u of filtered) {
+        if (next.size >= MAX_SELECTABLE) break;
+        next.add(u);
+      }
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  async function runScan() {
+    if (selected.size === 0 || scanning) return;
+    setScanning(true);
+    setError(null);
+    try {
+      const urls = [...selected].slice(0, MAX_SELECTABLE);
+      const res = await fetch("/api/seo-scan-urls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urls }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || "Scan failed");
+      }
+      const newPages = (data?.pages ?? []) as SiteAuditReport["pages"];
+      // Merge: replace any duplicates by URL, append the rest
+      const existingByUrl = new Map(report.pages.map((p) => [p.requestedUrl, p]));
+      for (const p of newPages) existingByUrl.set(p.requestedUrl, p);
+      const mergedPages = [...existingByUrl.values()];
+      onReportUpdate({
+        ...report,
+        pages: mergedPages,
+        pagesScanned: mergedPages.length,
+        fetchedAt: new Date().toISOString(),
+      });
+      setSelected(new Set());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Scan failed");
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">
+            Scan more pages ({unscanned.length} remaining)
+          </h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Pick from pages discovered during the initial scan. Up to {MAX_SELECTABLE} at a time.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-xs tabular-nums ${
+              overLimit ? "font-semibold text-destructive" : "text-muted-foreground"
+            }`}
+          >
+            {selected.size} / {MAX_SELECTABLE} selected
+          </span>
+          <Button
+            size="sm"
+            onClick={runScan}
+            disabled={selected.size === 0 || overLimit || scanning}
+          >
+            {scanning ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Scanning…
+              </>
+            ) : (
+              <>
+                <Search className="mr-1.5 h-3.5 w-3.5" /> Scan selected
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Input
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter by path (e.g. /blog)"
+          className="h-8 max-w-xs text-xs"
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs"
+          onClick={selectAllFiltered}
+          disabled={filtered.length === 0 || allFilteredSelected || selected.size >= MAX_SELECTABLE}
+        >
+          Select {filter ? "filtered" : "all"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 text-xs"
+          onClick={clearSelection}
+          disabled={selected.size === 0}
+        >
+          Clear
+        </Button>
+      </div>
+
+      {error && (
+        <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+          {error}
+        </div>
+      )}
+
+      <ul className="max-h-80 divide-y divide-border overflow-y-auto rounded-lg border border-border">
+        {filtered.length === 0 ? (
+          <li className="p-3 text-center text-xs text-muted-foreground">
+            No URLs match this filter.
+          </li>
+        ) : (
+          filtered.slice(0, 200).map((url) => {
+            const isChecked = selected.has(url);
+            const path = shortenUrl(url);
+            return (
+              <li key={url}>
+                <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm transition-colors hover:bg-muted/40">
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={() => toggleOne(url)}
+                    disabled={!isChecked && selected.size >= MAX_SELECTABLE}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-xs text-foreground">{path}</span>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 text-muted-foreground hover:text-primary"
+                    aria-label="Open page"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </label>
+              </li>
+            );
+          })
+        )}
+        {filtered.length > 200 && (
+          <li className="p-2 text-center text-xs text-muted-foreground">
+            Showing first 200 of {filtered.length}. Use the filter to narrow down.
+          </li>
+        )}
+      </ul>
     </div>
   );
 }

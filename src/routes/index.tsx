@@ -388,7 +388,9 @@ function Index() {
         )}
 
         {/* Site results */}
-        {siteReport && !loading && <SiteResults report={siteReport} />}
+        {siteReport && !loading && (
+          <SiteResults report={siteReport} onReportUpdate={setSiteReport} />
+        )}
 
         {/* Empty state */}
         {!report && !siteReport && !loading && !error && (
