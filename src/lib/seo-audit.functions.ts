@@ -178,7 +178,7 @@ function normalizeAuditUrl(raw: string): string {
   return parsed.toString();
 }
 
-function emptyOnPageReport(finalUrl: string): OnPageReport {
+export function emptyOnPageReport(finalUrl: string): OnPageReport {
   return {
     finalUrl,
     title: null,
