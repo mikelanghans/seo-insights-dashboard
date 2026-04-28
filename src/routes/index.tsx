@@ -94,7 +94,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
-      <header className="border-b border-border bg-background/80 backdrop-blur-sm">
+      <header className="border-b border-border/80 bg-card/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--gradient-hero)] shadow-[var(--shadow-elegant)]">
@@ -114,7 +114,11 @@ function Index() {
 
       <main className="mx-auto max-w-6xl px-6 py-12">
         {/* Hero / Input */}
-        <section className="mb-10 text-center">
+        <section className="mb-10 rounded-3xl border border-border/80 bg-card/75 px-4 py-10 text-center shadow-[var(--shadow-card)] backdrop-blur-sm sm:px-8">
+          <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <ScanSearch className="h-3.5 w-3.5" />
+            Agency SEO Diagnostics
+          </div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Instant SEO health check for any page
           </h2>
@@ -124,10 +128,10 @@ function Index() {
 
           <form
             onSubmit={handleSubmit}
-            className="mx-auto mt-8 flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-stretch"
+            className="mx-auto mt-8 flex w-full max-w-3xl flex-col gap-2 rounded-2xl border border-border bg-background/95 p-2 shadow-[var(--shadow-elegant)] sm:flex-row sm:items-stretch"
           >
             <div className="relative flex-1 min-w-0">
-              <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Globe className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
               <Input
                 ref={urlInputRef}
                 type="text"
@@ -147,17 +151,17 @@ function Index() {
                 }}
                 disabled={loading}
                 aria-invalid={url.length > 0 && !isValid}
-                className="h-12 pl-10 pr-10 text-base shadow-[var(--shadow-card)]"
+                className="h-13 border-0 bg-transparent pl-11 pr-10 text-base shadow-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               {isValid && !loading && (
-                <CheckCircle2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
+                <CheckCircle2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-success" />
               )}
             </div>
             <Button
               type="submit"
               onClick={() => void runAudit()}
               disabled={loading || !isValid}
-              className="h-12 w-full shrink-0 bg-[var(--gradient-hero)] px-6 text-base font-semibold !text-white shadow-[var(--shadow-elegant)] hover:opacity-95 disabled:opacity-50 sm:w-auto sm:min-w-[140px]"
+              className="h-13 w-full shrink-0 border border-transparent bg-[var(--gradient-hero)] px-6 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:opacity-95 disabled:border-border disabled:bg-secondary disabled:bg-none disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none sm:w-auto sm:min-w-[150px]"
             >
               {loading ? (
                 <>
