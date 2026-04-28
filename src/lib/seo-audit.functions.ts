@@ -255,6 +255,7 @@ export async function runSeoAuditForUrl(rawUrl: string) {
       onPage: page ? parseOnPage(page.html, page.finalUrl) : emptyOnPageReport(url),
       schema: page ? parseSchema(page.html) : [],
       pageSpeed: { mobile: mobileResult, desktop: desktopResult },
+      accessibility: page ? auditAccessibility(page.html) : undefined,
       crawlError,
     };
 }
