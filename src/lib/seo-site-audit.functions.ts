@@ -133,10 +133,12 @@ async function auditPagesWithBatch(
     });
     const deadline = Date.now() + 18_000;
     let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
+    onPageProgress?.((latest.data ?? []).length);
 
     while (latest.status === "scraping" && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
+      onPageProgress?.((latest.data ?? []).length);
     }
 
     const docs = (latest.data ?? []) as FirecrawlDocument[];
