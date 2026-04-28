@@ -14,6 +14,7 @@ interface ErrorContext {
 
 interface State {
   error: ErrorContext | null;
+  drawerOpen: boolean;
 }
 
 function buildContext(error: Error): ErrorContext {
