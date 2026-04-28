@@ -98,7 +98,7 @@ export function parseOnPage(html: string, finalUrl: string): OnPageReport {
   };
 }
 
-function parseSchema(html: string): SchemaItem[] {
+export function parseSchema(html: string): SchemaItem[] {
   const items: SchemaItem[] = [];
   const re = /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   for (const m of html.matchAll(re)) {
