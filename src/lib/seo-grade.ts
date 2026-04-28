@@ -166,6 +166,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
       issues.push({
         severity: op.images.missingAlt >= 5 ? "warning" : "info",
         title: `${op.images.missingAlt} of ${op.images.total} images missing alt text`,
+        groupKey: "images-missing-alt",
+        groupTitle: "Images missing alt text",
         description:
           "Alt text helps search engines understand images and is required for accessibility.",
         fix: 'Add a descriptive alt="…" attribute to every meaningful <img>. Use alt="" for decorative images.',
