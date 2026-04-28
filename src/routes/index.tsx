@@ -40,6 +40,8 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
+  const auditInFlightRef = useRef(false);
+  const activeAuditIdRef = useRef(0);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -65,10 +67,13 @@ function Index() {
   async function runAudit(rawUrl?: string) {
     const candidate = rawUrl ?? urlInputRef.current?.value ?? url;
     const auditUrl = normalizeUrl(candidate);
-    if (!auditUrl || loading) {
+    if (!auditUrl || auditInFlightRef.current) {
       if (!auditUrl) setError("Please enter a valid URL (e.g. example.com).");
       return;
     }
+    auditInFlightRef.current = true;
+    const auditId = activeAuditIdRef.current + 1;
+    activeAuditIdRef.current = auditId;
     setLoading(true);
     setError(null);
     setReport(null);
@@ -78,12 +83,17 @@ function Index() {
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
+      if (activeAuditIdRef.current !== auditId) return;
       setReport(data as AuditReport);
       setProgress(100);
     } catch (err) {
+      if (activeAuditIdRef.current !== auditId) return;
       setError(err instanceof Error ? err.message : "Audit failed");
     } finally {
-      setLoading(false);
+      if (activeAuditIdRef.current === auditId) {
+        auditInFlightRef.current = false;
+        setLoading(false);
+      }
     }
   }
 
@@ -159,7 +169,6 @@ function Index() {
             </div>
             <Button
               type="submit"
-              onClick={() => void runAudit()}
               disabled={loading || url.trim().length === 0}
               className="h-13 w-full shrink-0 border-0 !bg-none px-6 text-base font-semibold !text-white shadow-[var(--shadow-elegant)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[150px]"
               style={{ backgroundImage: "var(--gradient-hero)" }}
