@@ -263,10 +263,10 @@ function scoreSpeed(report: AuditReport): GradeBreakdown {
   return {
     label: "Page Speed",
     score,
-    weight: 0.33,
+    weight: vals.length ? 0.33 : 0,
     detail: vals.length
       ? `Mobile ${m.performanceScore ?? "—"} · Desktop ${d.performanceScore ?? "—"}`
-      : "PageSpeed data unavailable",
+      : "Unavailable — excluded from grade",
     issues,
   };
 }
