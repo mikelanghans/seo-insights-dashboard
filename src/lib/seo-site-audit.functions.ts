@@ -158,10 +158,13 @@ async function auditPagesWithBatch(
 export async function runSeoSiteAudit(
   rawUrl: string,
   scope: SiteScanScope,
+  onProgress?: (update: ScanProgressUpdate) => void,
 ): Promise<SiteAuditReport> {
   const rootUrl = normalizeRoot(rawUrl);
   const limit = SCOPE_LIMITS[scope] ?? SCOPE_LIMITS.standard;
   const warnings: string[] = [];
+
+  onProgress?.({ phase: "mapping", pagesScanned: 0, pagesTotal: 0, discoveredUrlCount: 0 });
 
   const fc = getFirecrawl();
   const homepageSpeedPromise = Promise.all([
@@ -194,7 +197,6 @@ export async function runSeoSiteAudit(
   for (const candidate of [rootUrl, ...allLinks]) {
     try {
       const u = new URL(candidate);
-      // Strip fragments, normalize trailing slash for de-dup
       u.hash = "";
       const key = u.toString();
       if (!seen.has(key)) {
@@ -213,8 +215,29 @@ export async function runSeoSiteAudit(
     );
   }
 
+  onProgress?.({
+    phase: "scanning",
+    pagesScanned: 0,
+    pagesTotal: targets.length,
+    discoveredUrlCount: ordered.length,
+  });
+
   // 2. Scrape + parse pages with a time budget so the API returns useful partial results instead of timing out.
-  const pages = await auditPagesWithBatch(fc, targets, warnings);
+  const pages = await auditPagesWithBatch(fc, targets, warnings, (scanned) => {
+    onProgress?.({
+      phase: "scanning",
+      pagesScanned: scanned,
+      pagesTotal: targets.length,
+      discoveredUrlCount: ordered.length,
+    });
+  });
+
+  onProgress?.({
+    phase: "grading",
+    pagesScanned: pages.length,
+    pagesTotal: targets.length,
+    discoveredUrlCount: ordered.length,
+  });
 
   // 3. Run PageSpeed once on the homepage so the site grade can include it
   let homepageSpeed: SiteAuditReport["homepageSpeed"];
@@ -226,6 +249,13 @@ export async function runSeoSiteAudit(
   } catch {
     // Non-fatal — site audit can proceed without speed data
   }
+
+  onProgress?.({
+    phase: "complete",
+    pagesScanned: pages.length,
+    pagesTotal: targets.length,
+    discoveredUrlCount: ordered.length,
+  });
 
   return {
     rootUrl,
