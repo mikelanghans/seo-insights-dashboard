@@ -112,6 +112,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
     issues.push({
       severity: "warning",
       title: `Page has ${op.h1Count} H1 tags`,
+      groupKey: "multiple-h1",
+      groupTitle: "Multiple H1 tags on page",
       description: "Multiple H1s dilute the primary topic signal for search engines and screen readers.",
       fix: "Keep exactly one H1 per page describing the main topic. Demote the others to H2.",
     });
