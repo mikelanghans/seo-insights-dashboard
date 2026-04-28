@@ -377,8 +377,11 @@ function Index() {
           </section>
         )}
 
+        {/* Site results */}
+        {siteReport && !loading && <SiteResults report={siteReport} />}
+
         {/* Empty state */}
-        {!report && !loading && !error && (
+        {!report && !siteReport && !loading && !error && (
           <section className="grid gap-4 sm:grid-cols-3">
             {[
               { icon: Globe, title: "On-Page SEO", desc: "Title, meta, headings, canonical, robots & alt tags" },
