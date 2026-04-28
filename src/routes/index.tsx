@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2 } from "lucide-react";
-import { runSeoAudit } from "@/lib/seo-audit.functions";
 
 function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -78,7 +77,15 @@ function Index() {
     setError(null);
     setReport(null);
     try {
-      const data = await runSeoAudit({ data: { url: auditUrl } });
+      const response = await fetch("/api/seo-audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: auditUrl }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.error || "Audit failed");
+      }
       if (activeAuditIdRef.current !== auditId) return;
       setReport(data as AuditReport);
       setProgress(100);
