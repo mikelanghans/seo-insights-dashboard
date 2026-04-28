@@ -119,33 +119,30 @@ function Index() {
     setSiteReport(null);
     setCurrentScanId(null);
     try {
-      const endpoint = mode === "site" ? "/api/seo-site-audit" : "/api/seo-audit";
-      const body = mode === "site" ? { url: auditUrl, scope } : { url: auditUrl };
-      const response = await fetch(endpoint, {
+      if (mode === "site") {
+        // Async flow: server creates a pending scan row, we redirect to its detail page where progress polls live.
+        const result = await startScan({ rootUrl: auditUrl, scope });
+        if (activeAuditIdRef.current !== auditId) return;
+        if ("error" in result) throw new Error(result.error);
+        toast.success("Scan started", {
+          description: "Tracking progress on the scan page.",
+        });
+        setScansRefreshKey((k) => k + 1);
+        void navigate({ to: "/scan/$id", params: { id: result.scanId } });
+        return;
+      }
+
+      const response = await fetch("/api/seo-audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ url: auditUrl }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.error || "Audit failed");
       }
       if (activeAuditIdRef.current !== auditId) return;
-      if (mode === "site") {
-        const site = data as SiteAuditReport;
-        setSiteReport(site);
-        // Persist site scans so we can revisit / scan more later
-        const id = await saveScan({ rootUrl: auditUrl, scope, report: site });
-        if (id && activeAuditIdRef.current === auditId) {
-          setCurrentScanId(id);
-          setScansRefreshKey((k) => k + 1);
-          toast.success("Scan saved", {
-            description: "Find it under Recent scans anytime.",
-          });
-        }
-      } else {
-        setReport(data as AuditReport);
-      }
+      setReport(data as AuditReport);
       setProgress(100);
     } catch (err) {
       if (activeAuditIdRef.current !== auditId) return;
@@ -155,14 +152,6 @@ function Index() {
         auditInFlightRef.current = false;
         setLoading(false);
       }
-    }
-  }
-
-  function handleSiteReportUpdate(next: SiteAuditReport) {
-    setSiteReport(next);
-    if (currentScanId) {
-      void updateScanReport(currentScanId, next);
-      setScansRefreshKey((k) => k + 1);
     }
   }
 
