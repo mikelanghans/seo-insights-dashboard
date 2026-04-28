@@ -134,8 +134,19 @@ export const Route = createFileRoute("/api/scan-start")({
           );
         }
 
-        // Kick off the scan in the background — do NOT await.
-        void executeScan({ scanId: inserted.id, url: body.url, scope });
+        // Kick off the scan in the background. On Cloudflare Workers we MUST
+        // register the promise with waitUntil — otherwise the runtime cancels
+        // pending work the moment the response is returned.
+        const scanPromise = executeScan({ scanId: inserted.id, url: body.url, scope });
+        try {
+          const modName = "cloudflare:workers";
+          const mod = (await import(/* @vite-ignore */ modName)) as { ctx: { waitUntil: (p: Promise<unknown>) => void } };
+          const { ctx } = mod;
+          ctx.waitUntil(scanPromise);
+        } catch {
+          // Not running on Cloudflare (e.g. local Node dev) — fire-and-forget is fine there.
+          void scanPromise;
+        }
 
         return Response.json({ scanId: inserted.id });
       },
