@@ -10,6 +10,10 @@ export interface Issue {
   title: string;
   description: string;
   fix: string;
+  /** Canonical group key so variants (e.g. different counts) merge in site rollup. */
+  groupKey?: string;
+  /** Clean human label for the rollup, without per-page numbers. */
+  groupTitle?: string;
 }
 
 export interface GradeBreakdown {
