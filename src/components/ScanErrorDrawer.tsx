@@ -39,6 +39,7 @@ export function ScanErrorDrawer({
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Reset to the original scanId whenever the drawer opens with a new error.
   useEffect(() => {
