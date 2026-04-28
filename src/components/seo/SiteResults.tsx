@@ -8,7 +8,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { GradeCard } from "./GradeCard";
-import { computeSiteGrade, type IssueSeverity } from "@/lib/seo-grade";
+import { computeSiteGrade, type IssueSeverity, type RollupIssue } from "@/lib/seo-grade";
 import type { SiteAuditReport } from "@/lib/seo-types";
 
 const SEV_STYLES: Record<IssueSeverity, { icon: typeof AlertCircle; className: string; label: string }> = {
