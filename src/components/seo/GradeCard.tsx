@@ -67,7 +67,7 @@ function IssueRow({ issue }: { issue: Issue }) {
   );
 }
 
-export function GradeCard({ grade }: { grade: OverallGrade }) {
+export function GradeCard({ grade, hideIssuesSection = false }: { grade: OverallGrade; hideIssuesSection?: boolean }) {
   const tone = toneFor(grade.score);
   const circumference = 2 * Math.PI * 46;
   const dash = (grade.score / 100) * circumference;
@@ -138,35 +138,37 @@ export function GradeCard({ grade }: { grade: OverallGrade }) {
       </div>
 
       {/* Issues breakdown */}
-      <div className="border-t border-border pt-6">
-        {grade.topIssues.length === 0 ? (
-          <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/5 p-4">
-            <CheckCircle2 className="h-5 w-5 text-success" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">No issues detected</p>
-              <p className="text-xs text-muted-foreground">
-                This page meets the audited SEO and AEO best practices.
-              </p>
+      {!hideIssuesSection && (
+        <div className="border-t border-border pt-6">
+          {grade.topIssues.length === 0 ? (
+            <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/5 p-4">
+              <CheckCircle2 className="h-5 w-5 text-success" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">No issues detected</p>
+                <p className="text-xs text-muted-foreground">
+                  This page meets the audited SEO and AEO best practices.
+                </p>
+              </div>
             </div>
-          </div>
-        ) : (
-          <>
-            <div className="mb-4 flex items-baseline justify-between gap-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
-                Issues to fix
-              </h3>
-              <span className="text-xs text-muted-foreground">
-                {grade.topIssues.length} item{grade.topIssues.length === 1 ? "" : "s"} · sorted by severity
-              </span>
-            </div>
-            <div className="space-y-2.5">
-              {grade.topIssues.map((issue, i) => (
-                <IssueRow key={`${issue.title}-${i}`} issue={issue} />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <div className="mb-4 flex items-baseline justify-between gap-3">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                  Issues to fix
+                </h3>
+                <span className="text-xs text-muted-foreground">
+                  {grade.topIssues.length} item{grade.topIssues.length === 1 ? "" : "s"} · sorted by severity
+                </span>
+              </div>
+              <div className="space-y-2.5">
+                {grade.topIssues.map((issue, i) => (
+                  <IssueRow key={`${issue.title}-${i}`} issue={issue} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
