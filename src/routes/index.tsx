@@ -160,8 +160,9 @@ function Index() {
             <Button
               type="submit"
               onClick={() => void runAudit()}
-              disabled={loading || !isValid}
-              className="h-13 w-full shrink-0 border border-transparent bg-[var(--gradient-hero)] px-6 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:opacity-95 disabled:border-border disabled:bg-secondary disabled:bg-none disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none sm:w-auto sm:min-w-[150px]"
+              disabled={loading || url.trim().length === 0}
+              className="h-13 w-full shrink-0 border-0 !bg-none px-6 text-base font-semibold !text-white shadow-[var(--shadow-elegant)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[150px]"
+              style={{ backgroundImage: "var(--gradient-hero)" }}
             >
               {loading ? (
                 <>
