@@ -96,7 +96,13 @@ export async function updateScanReport(scanId: string, report: SiteAuditReport):
   if (error) console.error("Failed to update scan:", error);
 }
 
-export async function listRecentScans(limit = 10): Promise<SavedScanSummary[]> {
+export async function linkRetryScan(originalId: string, retryId: string): Promise<void> {
+  const { error } = await supabase
+    .from("scans")
+    .update({ retry_scan_id: retryId })
+    .eq("id", originalId);
+  if (error) console.error("Failed to link retry scan:", error);
+}
   const { data, error } = await supabase
     .from("scans")
     .select(SUMMARY_COLUMNS)
