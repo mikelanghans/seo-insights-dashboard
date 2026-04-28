@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/start-client-core";
-import type { OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
+import type { JsonValue, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
 
 function decodeEntities(str: string): string {
   return str
@@ -16,6 +16,14 @@ function getAttr(tag: string, name: string): string | null {
   const m = tag.match(re);
   if (!m) return null;
   return decodeEntities(m[2] ?? m[3] ?? m[4] ?? "");
+}
+
+function toJsonValue(value: unknown): JsonValue {
+  try {
+    return JSON.parse(JSON.stringify(value)) as JsonValue;
+  } catch {
+    return String(value);
+  }
 }
 
 function parseOnPage(html: string, finalUrl: string): OnPageReport {
@@ -108,7 +116,7 @@ function parseSchema(html: string): SchemaItem[] {
           const obj = node as Record<string, unknown>;
           const typeValue = obj["@type"];
           const type = Array.isArray(typeValue) ? typeValue.join(", ") : (typeValue as string) || "Unknown";
-          items.push({ type, raw: obj });
+          items.push({ type, raw: toJsonValue(obj) });
           if (Array.isArray(obj["@graph"])) (obj["@graph"] as unknown[]).forEach(collect);
         }
       };
