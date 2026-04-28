@@ -25,7 +25,7 @@ function toJsonValue(value: unknown): JsonValue {
   }
 }
 
-function parseOnPage(html: string, finalUrl: string): OnPageReport {
+export function parseOnPage(html: string, finalUrl: string): OnPageReport {
   const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
   const title = titleMatch ? decodeEntities(titleMatch[1].trim()) : null;
   const htmlTagMatch = html.match(/<html\b[^>]*>/i);
