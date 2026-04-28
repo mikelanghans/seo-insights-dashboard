@@ -5,6 +5,7 @@ import {
   parseOnPage,
   parseSchema,
 } from "./seo-audit.functions";
+import { auditAccessibility } from "./a11y-audit";
 import type { PageAuditReport, SiteAuditReport } from "./seo-types";
 
 export type SiteScanScope = "quick" | "standard" | "deep";
