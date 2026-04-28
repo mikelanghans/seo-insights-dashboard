@@ -409,6 +409,13 @@ function Index() {
           <SiteResults report={siteReport} onReportUpdate={handleSiteReportUpdate} />
         )}
 
+        {/* Recent saved scans (when signed in and no live result) */}
+        {user && !report && !siteReport && !loading && (
+          <div className="mb-6">
+            <RecentScans refreshKey={scansRefreshKey} />
+          </div>
+        )}
+
         {/* Empty state */}
         {!report && !siteReport && !loading && !error && (
           <section className="grid gap-4 sm:grid-cols-3">
