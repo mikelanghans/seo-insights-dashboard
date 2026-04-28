@@ -31,10 +31,10 @@ function buildContext(error: Error): ErrorContext {
 }
 
 export class GlobalErrorBoundary extends Component<{ children: ReactNode }, State> {
-  state: State = { error: null };
+  state: State = { error: null, drawerOpen: false };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { error: buildContext(error) };
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { error: buildContext(error) } as State;
   }
 
   componentDidCatch(error: Error) {
