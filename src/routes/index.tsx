@@ -242,10 +242,16 @@ function Index() {
                 </a>
               </div>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span>HTTP {report.httpStatus}</span>
+                {report.httpStatus > 0 && <span>HTTP {report.httpStatus}</span>}
                 <span>{new Date(report.fetchedAt).toLocaleString()}</span>
               </div>
             </div>
+
+            {report.crawlError && (
+              <div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">
+                The page blocked the HTML crawl, so On-Page SEO and Schema may be limited. Page Speed still ran where available.
+              </div>
+            )}
 
             <Tabs defaultValue="onpage" className="w-full">
               <TabsList className="grid w-full grid-cols-3 bg-card shadow-[var(--shadow-card)] h-auto p-1">
