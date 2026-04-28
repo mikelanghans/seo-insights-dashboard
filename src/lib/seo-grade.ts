@@ -209,11 +209,16 @@ function scoreSpeed(report: AuditReport): GradeBreakdown {
   const issues: Issue[] = [];
 
   if (!vals.length) {
+    const rateLimited = /\b429\b|rate.?limit/i.test(`${m.error ?? ""} ${d.error ?? ""}`);
     issues.push({
       severity: "info",
-      title: "PageSpeed data unavailable",
-      description: "We couldn't reach the PageSpeed Insights API for this URL.",
-      fix: "Re-run the audit. If it persists, the page may be blocking automated testing.",
+      title: rateLimited ? "PageSpeed rate-limited" : "PageSpeed data unavailable",
+      description: rateLimited
+        ? "Google's PageSpeed Insights API rate-limited this request. Speed was excluded from the overall grade so it isn't penalized."
+        : "We couldn't reach the PageSpeed Insights API for this URL. Speed was excluded from the overall grade.",
+      fix: rateLimited
+        ? "Wait a minute and re-run, or add a PAGESPEED_API_KEY to lift the anonymous quota to 25,000/day."
+        : "Re-run the audit. If it persists, the page may be blocking automated testing.",
     });
   } else {
     if (typeof m.performanceScore === "number" && m.performanceScore < 70) {
