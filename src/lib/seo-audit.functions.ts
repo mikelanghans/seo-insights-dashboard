@@ -127,7 +127,7 @@ export function parseSchema(html: string): SchemaItem[] {
   return items;
 }
 
-async function fetchPageSpeed(url: string, strategy: "mobile" | "desktop"): Promise<PageSpeedReport> {
+export async function fetchPageSpeed(url: string, strategy: "mobile" | "desktop"): Promise<PageSpeedReport> {
   const apiKey = process.env.PAGESPEED_API_KEY;
   const params = new URLSearchParams({ url, strategy });
   for (const cat of ["performance", "seo", "accessibility", "best-practices"]) params.append("category", cat);
