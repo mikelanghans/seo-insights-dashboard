@@ -67,6 +67,8 @@ export interface SiteAuditReport {
   pages: PageAuditReport[];
   /** Total URLs Firecrawl discovered (may be larger than pagesScanned). */
   discoveredUrlCount: number;
+  /** Full list of URLs Firecrawl discovered on the site (capped). */
+  discoveredUrls: string[];
   /** PageSpeed for the root URL (run once to keep API costs reasonable). */
   homepageSpeed?: { mobile: PageSpeedReport; desktop: PageSpeedReport };
   warnings?: string[];
