@@ -1,6 +1,13 @@
 import type { OnPageReport } from "@/lib/seo-types";
 import { CheckRow } from "./CheckRow";
 import { Badge } from "@/components/ui/badge";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function OnPageTab({ data }: { data: OnPageReport }) {
   const titleStatus = !data.title
