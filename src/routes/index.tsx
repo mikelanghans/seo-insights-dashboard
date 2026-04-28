@@ -406,7 +406,7 @@ function Index() {
 
         {/* Site results */}
         {siteReport && !loading && (
-          <SiteResults report={siteReport} onReportUpdate={setSiteReport} />
+          <SiteResults report={siteReport} onReportUpdate={handleSiteReportUpdate} />
         )}
 
         {/* Empty state */}
