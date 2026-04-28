@@ -123,12 +123,12 @@ async function auditPagesWithBatch(
       ignoreInvalidURLs: true,
       maxConcurrency: 10,
     });
-    const deadline = Date.now() + 36_000;
-    let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 6 });
+    const deadline = Date.now() + 28_000;
+    let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 4 });
 
     while (latest.status === "scraping" && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 6 });
+      latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 4 });
     }
 
     const docs = (latest.data ?? []) as FirecrawlDocument[];
@@ -154,6 +154,12 @@ export async function runSeoSiteAudit(
   const warnings: string[] = [];
 
   const fc = getFirecrawl();
+  const homepageSpeedPromise = Promise.all([
+    fetchPageSpeed(rootUrl, "mobile"),
+    fetchPageSpeed(rootUrl, "desktop"),
+  ])
+    .then(([mobile, desktop]) => ({ mobile, desktop }))
+    .catch(() => undefined);
 
   // 1. Discover URLs via Firecrawl map (fast — no full scraping)
   let allLinks: string[] = [];
@@ -203,11 +209,10 @@ export async function runSeoSiteAudit(
   // 3. Run PageSpeed once on the homepage so the site grade can include it
   let homepageSpeed: SiteAuditReport["homepageSpeed"];
   try {
-    const [mobile, desktop] = await Promise.all([
-      fetchPageSpeed(rootUrl, "mobile"),
-      fetchPageSpeed(rootUrl, "desktop"),
+    homepageSpeed = await Promise.race([
+      homepageSpeedPromise,
+      new Promise<undefined>((resolve) => setTimeout(resolve, 8_000)),
     ]);
-    homepageSpeed = { mobile, desktop };
   } catch {
     // Non-fatal — site audit can proceed without speed data
   }
