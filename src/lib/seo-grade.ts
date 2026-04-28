@@ -86,6 +86,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
       issues.push({
         severity: "warning",
         title: `Meta description length is ${op.metaDescriptionLength} characters`,
+        groupKey: "meta-length",
+        groupTitle: op.metaDescriptionLength < 70 ? "Meta description too short" : "Meta description too long",
         description:
           op.metaDescriptionLength < 70
             ? "Description is too short to be useful as a search snippet."
