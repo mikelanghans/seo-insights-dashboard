@@ -1,0 +1,196 @@
+import { createServerFn } from "@tanstack/start-client-core";
+import type { AuditReport, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
+
+function decodeEntities(str: string): string {
+  return str
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
+function getAttr(tag: string, name: string): string | null {
+  const re = new RegExp(`${name}\\s*=\\s*("([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
+  const m = tag.match(re);
+  if (!m) return null;
+  return decodeEntities(m[2] ?? m[3] ?? m[4] ?? "");
+}
+
+function parseOnPage(html: string, finalUrl: string): OnPageReport {
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = titleMatch ? decodeEntities(titleMatch[1].trim()) : null;
+  const htmlTagMatch = html.match(/<html\b[^>]*>/i);
+  const lang = htmlTagMatch ? getAttr(htmlTagMatch[0], "lang") : null;
+  const metaTags = [...html.matchAll(/<meta\b[^>]*>/gi)].map((m) => m[0]);
+  let metaDescription: string | null = null;
+  let robots: string | null = null;
+  let viewport: string | null = null;
+  const openGraph: Record<string, string> = {};
+  const twitter: Record<string, string> = {};
+
+  for (const tag of metaTags) {
+    const name = (getAttr(tag, "name") || "").toLowerCase();
+    const property = (getAttr(tag, "property") || "").toLowerCase();
+    const content = getAttr(tag, "content");
+    if (!content) continue;
+    if (name === "description") metaDescription = content;
+    else if (name === "robots") robots = content;
+    else if (name === "viewport") viewport = content;
+    else if (property.startsWith("og:")) openGraph[property] = content;
+    else if (name.startsWith("twitter:")) twitter[name] = content;
+  }
+
+  const linkTags = [...html.matchAll(/<link\b[^>]*>/gi)].map((m) => m[0]);
+  let canonical: string | null = null;
+  for (const tag of linkTags) {
+    const rel = (getAttr(tag, "rel") || "").toLowerCase();
+    if (rel === "canonical") {
+      canonical = getAttr(tag, "href");
+      break;
+    }
+  }
+
+  const headings: OnPageReport["headings"] = [];
+  for (const level of ["h1", "h2", "h3"] as const) {
+    const re = new RegExp(`<${level}\\b[^>]*>([\\s\\S]*?)<\\/${level}>`, "gi");
+    for (const m of html.matchAll(re)) {
+      const text = decodeEntities(m[1].replace(/<[^>]+>/g, "").trim());
+      if (text) headings.push({ tag: level, text: text.slice(0, 200) });
+    }
+  }
+
+  const imgTags = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+  let missingAlt = 0;
+  const missingAltSrcs: string[] = [];
+  for (const tag of imgTags) {
+    const alt = getAttr(tag, "alt");
+    if (alt === null || alt.trim() === "") {
+      missingAlt++;
+      const src = getAttr(tag, "src");
+      if (src && missingAltSrcs.length < 10) missingAltSrcs.push(src);
+    }
+  }
+
+  return {
+    finalUrl,
+    title,
+    titleLength: title?.length ?? 0,
+    metaDescription,
+    metaDescriptionLength: metaDescription?.length ?? 0,
+    canonical,
+    robots,
+    lang,
+    viewport,
+    headings,
+    h1Count: headings.filter((h) => h.tag === "h1").length,
+    images: { total: imgTags.length, missingAlt, missingAltSrcs },
+    openGraph,
+    twitter,
+  };
+}
+
+function parseSchema(html: string): SchemaItem[] {
+  const items: SchemaItem[] = [];
+  const re = /<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  for (const m of html.matchAll(re)) {
+    const raw = m[1].trim();
+    if (!raw) continue;
+    try {
+      const parsed = JSON.parse(raw);
+      const collect = (node: unknown) => {
+        if (Array.isArray(node)) {
+          node.forEach(collect);
+          return;
+        }
+        if (node && typeof node === "object") {
+          const obj = node as Record<string, unknown>;
+          const typeValue = obj["@type"];
+          const type = Array.isArray(typeValue) ? typeValue.join(", ") : (typeValue as string) || "Unknown";
+          items.push({ type, raw: obj });
+          if (Array.isArray(obj["@graph"])) (obj["@graph"] as unknown[]).forEach(collect);
+        }
+      };
+      collect(parsed);
+    } catch {
+      items.push({ type: "Invalid JSON-LD", raw: raw.slice(0, 200) });
+    }
+  }
+  return items;
+}
+
+async function fetchPageSpeed(url: string, strategy: "mobile" | "desktop"): Promise<PageSpeedReport> {
+  const apiKey = process.env.PAGESPEED_API_KEY;
+  const params = new URLSearchParams({ url, strategy });
+  for (const cat of ["performance", "seo", "accessibility", "best-practices"]) params.append("category", cat);
+  if (apiKey) params.set("key", apiKey);
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`);
+    if (!res.ok) throw new Error(`PageSpeed API ${res.status}`);
+    const result = await res.json();
+    const categories = result?.lighthouseResult?.categories ?? {};
+    const audits = result?.lighthouseResult?.audits ?? {};
+    const metric = (id: string) => {
+      const audit = audits[id];
+      return audit ? { value: audit.displayValue ?? "—", score: audit.score ?? null } : null;
+    };
+    return {
+      strategy,
+      performanceScore: categories.performance?.score != null ? Math.round(categories.performance.score * 100) : null,
+      seoScore: categories.seo?.score != null ? Math.round(categories.seo.score * 100) : null,
+      accessibilityScore: categories.accessibility?.score != null ? Math.round(categories.accessibility.score * 100) : null,
+      bestPracticesScore: categories["best-practices"]?.score != null ? Math.round(categories["best-practices"].score * 100) : null,
+      metrics: {
+        lcp: metric("largest-contentful-paint"),
+        fid: metric("max-potential-fid"),
+        cls: metric("cumulative-layout-shift"),
+        fcp: metric("first-contentful-paint"),
+        ttfb: metric("server-response-time"),
+        inp: metric("interactive"),
+      },
+    };
+  } catch (e) {
+    return {
+      strategy,
+      performanceScore: null,
+      seoScore: null,
+      accessibilityScore: null,
+      bestPracticesScore: null,
+      metrics: { lcp: null, fid: null, cls: null, fcp: null, ttfb: null, inp: null },
+      error: e instanceof Error ? e.message : "PageSpeed unavailable",
+    };
+  }
+}
+
+function normalizeAuditUrl(raw: string): string {
+  const withProto = /^https?:\/\//i.test(raw.trim()) ? raw.trim() : `https://${raw.trim()}`;
+  const parsed = new URL(withProto);
+  if (!parsed.hostname.includes(".")) throw new Error("Invalid URL");
+  return parsed.toString();
+}
+
+export const runSeoAudit = createServerFn({ method: "POST" })
+  .inputValidator((input: { url: string }) => input)
+  .handler(async ({ data }): Promise<AuditReport> => {
+    const url = normalizeAuditUrl(data.url);
+    const pageResponse = await fetch(url, {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://lovable.app)",
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
+    const html = await pageResponse.text();
+    const [mobile, desktop] = await Promise.all([fetchPageSpeed(url, "mobile"), fetchPageSpeed(url, "desktop")]);
+
+    return {
+      requestedUrl: url,
+      fetchedAt: new Date().toISOString(),
+      httpStatus: pageResponse.status,
+      onPage: parseOnPage(html, pageResponse.url || url),
+      schema: parseSchema(html),
+      pageSpeed: { mobile, desktop },
+    };
+  });
