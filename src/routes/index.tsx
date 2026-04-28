@@ -170,26 +170,30 @@ function Index() {
             Agency SEO Diagnostics
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Instant SEO health check for any page
+            {scanType === "a11y"
+              ? "Instant accessibility check for any page"
+              : "Instant SEO health check for any page"}
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            On-page signals, Core Web Vitals, and structured data — analyzed in one click.
+            {scanType === "a11y"
+              ? "Common WCAG 2.1 issues, with plain-English fixes — analyzed in one click."
+              : "On-page signals, Core Web Vitals, and structured data — analyzed in one click."}
           </p>
 
-          {/* Mode toggle */}
+          {/* Scan-type toggle */}
           <div className="mx-auto mt-7 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
             {([
-              { value: "single", label: "Single page", icon: FileText },
-              { value: "site", label: "Full site", icon: Layers },
+              { value: "seo", label: "SEO scan", icon: ScanSearch },
+              { value: "a11y", label: "Accessibility scan", icon: Eye },
             ] as const).map((opt) => {
               const Icon = opt.icon;
-              const active = mode === opt.value;
+              const active = scanType === opt.value;
               return (
                 <button
                   key={opt.value}
                   type="button"
                   disabled={loading}
-                  onClick={() => setMode(opt.value)}
+                  onClick={() => setScanType(opt.value)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
@@ -202,6 +206,35 @@ function Index() {
               );
             })}
           </div>
+
+          {/* Mode toggle (single page vs full site) — SEO only for now */}
+          {scanType === "seo" && (
+            <div className="mx-auto mt-3 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
+              {([
+                { value: "single", label: "Single page", icon: FileText },
+                { value: "site", label: "Full site", icon: Layers },
+              ] as const).map((opt) => {
+                const Icon = opt.icon;
+                const active = mode === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setMode(opt.value)}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <form
             onSubmit={handleSubmit}
