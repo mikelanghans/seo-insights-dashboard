@@ -135,7 +135,10 @@ export async function fetchPageSpeed(url: string, strategy: "mobile" | "desktop"
 
   try {
     const res = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?${params.toString()}`);
-    if (!res.ok) throw new Error(`PageSpeed API ${res.status}`);
+    if (!res.ok) {
+      if (res.status === 429) throw new Error("PageSpeed API 429 — rate-limited (add PAGESPEED_API_KEY for 25k/day)");
+      throw new Error(`PageSpeed API ${res.status}`);
+    }
     const result = await res.json();
     const categories = result?.lighthouseResult?.categories ?? {};
     const audits = result?.lighthouseResult?.audits ?? {};

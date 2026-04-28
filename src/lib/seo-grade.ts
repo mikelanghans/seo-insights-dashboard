@@ -209,11 +209,16 @@ function scoreSpeed(report: AuditReport): GradeBreakdown {
   const issues: Issue[] = [];
 
   if (!vals.length) {
+    const rateLimited = /\b429\b|rate.?limit/i.test(`${m.error ?? ""} ${d.error ?? ""}`);
     issues.push({
       severity: "info",
-      title: "PageSpeed data unavailable",
-      description: "We couldn't reach the PageSpeed Insights API for this URL.",
-      fix: "Re-run the audit. If it persists, the page may be blocking automated testing.",
+      title: rateLimited ? "PageSpeed rate-limited" : "PageSpeed data unavailable",
+      description: rateLimited
+        ? "Google's PageSpeed Insights API rate-limited this request. Speed was excluded from the overall grade so it isn't penalized."
+        : "We couldn't reach the PageSpeed Insights API for this URL. Speed was excluded from the overall grade.",
+      fix: rateLimited
+        ? "Wait a minute and re-run, or add a PAGESPEED_API_KEY to lift the anonymous quota to 25,000/day."
+        : "Re-run the audit. If it persists, the page may be blocking automated testing.",
     });
   } else {
     if (typeof m.performanceScore === "number" && m.performanceScore < 70) {
@@ -258,10 +263,10 @@ function scoreSpeed(report: AuditReport): GradeBreakdown {
   return {
     label: "Page Speed",
     score,
-    weight: 0.33,
+    weight: vals.length ? 0.33 : 0,
     detail: vals.length
       ? `Mobile ${m.performanceScore ?? "—"} · Desktop ${d.performanceScore ?? "—"}`
-      : "PageSpeed data unavailable",
+      : "Unavailable — excluded from grade",
     issues,
   };
 }
@@ -431,7 +436,8 @@ const SEVERITY_RANK: Record<IssueSeverity, number> = { critical: 0, warning: 1, 
 
 export function computeGrade(report: AuditReport): OverallGrade {
   const breakdown = [scoreOnPage(report), scoreSpeed(report), scoreSchema(report), scoreAEO(report)];
-  const total = breakdown.reduce((sum, b) => sum + b.score * b.weight, 0);
+  const totalWeight = breakdown.reduce((sum, b) => sum + b.weight, 0) || 1;
+  const total = breakdown.reduce((sum, b) => sum + b.score * (b.weight / totalWeight), 0);
   const score = Math.round(total);
   const letter = letterFor(score);
   const summary =
