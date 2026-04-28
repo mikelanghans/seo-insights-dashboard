@@ -36,47 +36,53 @@ function getFirecrawl(): Firecrawl {
   return new Firecrawl({ apiKey });
 }
 
+type FirecrawlDocument = {
+  rawHtml?: string;
+  html?: string;
+  metadata?: { sourceURL?: string; statusCode?: number; error?: string };
+};
+
+function pageReportFromDocument(url: string, doc: FirecrawlDocument | undefined): PageAuditReport {
+  const fetchedAt = new Date().toISOString();
+  const html = doc?.rawHtml || doc?.html || "";
+  const finalUrl = doc?.metadata?.sourceURL || url;
+  const status = doc?.metadata?.statusCode ?? 200;
+
+  if (!html) {
+    return {
+      requestedUrl: url,
+      fetchedAt,
+      httpStatus: status,
+      onPage: emptyOnPageReport(finalUrl),
+      schema: [],
+      crawlError: doc?.metadata?.error || "Page returned no HTML content.",
+    };
+  }
+
+  return {
+    requestedUrl: url,
+    fetchedAt,
+    httpStatus: status,
+    onPage: parseOnPage(html, finalUrl),
+    schema: parseSchema(html),
+  };
+}
+
 /** Run a scrape→parse pipeline on a single URL via Firecrawl. */
 async function auditOnePage(
   fc: Firecrawl,
   url: string,
 ): Promise<PageAuditReport> {
-  const fetchedAt = new Date().toISOString();
   try {
     const result = (await fc.scrape(url, {
       formats: ["rawHtml"],
       onlyMainContent: false,
-    })) as {
-      rawHtml?: string;
-      html?: string;
-      metadata?: { sourceURL?: string; statusCode?: number };
-    };
-    const html = result.rawHtml || result.html || "";
-    const finalUrl = result.metadata?.sourceURL || url;
-    const status = result.metadata?.statusCode ?? 200;
-
-    if (!html) {
-      return {
-        requestedUrl: url,
-        fetchedAt,
-        httpStatus: status,
-        onPage: emptyOnPageReport(finalUrl),
-        schema: [],
-        crawlError: "Page returned no HTML content.",
-      };
-    }
-
-    return {
-      requestedUrl: url,
-      fetchedAt,
-      httpStatus: status,
-      onPage: parseOnPage(html, finalUrl),
-      schema: parseSchema(html),
-    };
+    })) as FirecrawlDocument;
+    return pageReportFromDocument(url, result);
   } catch (error) {
     return {
       requestedUrl: url,
-      fetchedAt,
+      fetchedAt: new Date().toISOString(),
       httpStatus: 0,
       onPage: emptyOnPageReport(url),
       schema: [],
@@ -104,6 +110,41 @@ async function runWithConcurrency<T, R>(
   return results;
 }
 
+async function auditPagesWithBatch(
+  fc: Firecrawl,
+  urls: string[],
+  warnings: string[],
+): Promise<PageAuditReport[]> {
+  if (urls.length === 0) return [];
+
+  try {
+    const job = await fc.startBatchScrape(urls, {
+      options: { formats: ["rawHtml"], onlyMainContent: false, timeout: 20_000 },
+      ignoreInvalidURLs: true,
+      maxConcurrency: 10,
+    });
+    const deadline = Date.now() + 18_000;
+    let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
+
+    while (latest.status === "scraping" && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
+    }
+
+    const docs = (latest.data ?? []) as FirecrawlDocument[];
+    if (latest.status === "scraping") {
+      warnings.push(`The scan is still running, so results include the first ${docs.length} completed page${docs.length === 1 ? "" : "s"}. Try Quick scan for faster full results.`);
+      void fc.cancelBatchScrape(job.id).catch(() => undefined);
+    }
+
+    if (docs.length === 0) return [pageReportFromDocument(urls[0], undefined)];
+    return docs.map((doc, index) => pageReportFromDocument(doc.metadata?.sourceURL || urls[index] || urls[0], doc));
+  } catch (error) {
+    warnings.push(`Batch scanning was unavailable, so the tool scanned a smaller sample. ${error instanceof Error ? error.message : ""}`.trim());
+    return runWithConcurrency(urls.slice(0, 10), 3, (url) => auditOnePage(fc, url));
+  }
+}
+
 export async function runSeoSiteAudit(
   rawUrl: string,
   scope: SiteScanScope,
@@ -113,6 +154,12 @@ export async function runSeoSiteAudit(
   const warnings: string[] = [];
 
   const fc = getFirecrawl();
+  const homepageSpeedPromise = Promise.all([
+    fetchPageSpeed(rootUrl, "mobile"),
+    fetchPageSpeed(rootUrl, "desktop"),
+  ])
+    .then(([mobile, desktop]) => ({ mobile, desktop }))
+    .catch(() => undefined);
 
   // 1. Discover URLs via Firecrawl map (fast — no full scraping)
   let allLinks: string[] = [];
@@ -156,17 +203,16 @@ export async function runSeoSiteAudit(
     );
   }
 
-  // 2. Scrape + parse each page (with bounded concurrency)
-  const pages = await runWithConcurrency(targets, 5, (url) => auditOnePage(fc, url));
+  // 2. Scrape + parse pages with a time budget so the API returns useful partial results instead of timing out.
+  const pages = await auditPagesWithBatch(fc, targets, warnings);
 
   // 3. Run PageSpeed once on the homepage so the site grade can include it
   let homepageSpeed: SiteAuditReport["homepageSpeed"];
   try {
-    const [mobile, desktop] = await Promise.all([
-      fetchPageSpeed(rootUrl, "mobile"),
-      fetchPageSpeed(rootUrl, "desktop"),
+    homepageSpeed = await Promise.race([
+      homepageSpeedPromise,
+      new Promise<undefined>((resolve) => setTimeout(resolve, 5_000)),
     ]);
-    homepageSpeed = { mobile, desktop };
   } catch {
     // Non-fatal — site audit can proceed without speed data
   }
