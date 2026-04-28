@@ -30,8 +30,14 @@ import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
 import { SchemaTab } from "@/components/seo/SchemaTab";
 import { GradeCard } from "@/components/seo/GradeCard";
 import { SiteResults } from "@/components/seo/SiteResults";
+import { RecentScans } from "@/components/seo/RecentScans";
+import { AppHeader } from "@/components/AppHeader";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
+import { saveScan, updateScanReport } from "@/lib/scans";
+import { useAuth } from "@/hooks/use-auth";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 
 type ScanMode = "single" | "site";
 type SiteScope = "quick" | "standard" | "deep";
@@ -60,6 +66,8 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [url, setUrl] = useState("https://");
   const [mode, setMode] = useState<ScanMode>("single");
   const [scope, setScope] = useState<SiteScope>("standard");
@@ -68,6 +76,8 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [siteReport, setSiteReport] = useState<SiteAuditReport | null>(null);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
+  const [scansRefreshKey, setScansRefreshKey] = useState(0);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
@@ -96,6 +106,10 @@ function Index() {
       if (!auditUrl) setError("Please enter a valid URL (e.g. example.com).");
       return;
     }
+    if (!user) {
+      void navigate({ to: "/auth" });
+      return;
+    }
     auditInFlightRef.current = true;
     const auditId = activeAuditIdRef.current + 1;
     activeAuditIdRef.current = auditId;
@@ -103,6 +117,7 @@ function Index() {
     setError(null);
     setReport(null);
     setSiteReport(null);
+    setCurrentScanId(null);
     try {
       const endpoint = mode === "site" ? "/api/seo-site-audit" : "/api/seo-audit";
       const body = mode === "site" ? { url: auditUrl, scope } : { url: auditUrl };
@@ -117,7 +132,17 @@ function Index() {
       }
       if (activeAuditIdRef.current !== auditId) return;
       if (mode === "site") {
-        setSiteReport(data as SiteAuditReport);
+        const site = data as SiteAuditReport;
+        setSiteReport(site);
+        // Persist site scans so we can revisit / scan more later
+        const id = await saveScan({ rootUrl: auditUrl, scope, report: site });
+        if (id && activeAuditIdRef.current === auditId) {
+          setCurrentScanId(id);
+          setScansRefreshKey((k) => k + 1);
+          toast.success("Scan saved", {
+            description: "Find it under Recent scans anytime.",
+          });
+        }
       } else {
         setReport(data as AuditReport);
       }
@@ -133,6 +158,14 @@ function Index() {
     }
   }
 
+  function handleSiteReportUpdate(next: SiteAuditReport) {
+    setSiteReport(next);
+    if (currentScanId) {
+      void updateScanReport(currentScanId, next);
+      setScansRefreshKey((k) => k + 1);
+    }
+  }
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     void runAudit();
@@ -140,23 +173,7 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
-      <header className="border-b border-border/80 bg-card/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--gradient-hero)] shadow-[var(--shadow-elegant)]">
-              <ScanSearch className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold tracking-tight text-foreground">
-                SEO<span className="text-primary">Audit</span>
-              </h1>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Agency Edition
-              </p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-12">
         {/* Hero / Input */}
@@ -389,7 +406,14 @@ function Index() {
 
         {/* Site results */}
         {siteReport && !loading && (
-          <SiteResults report={siteReport} onReportUpdate={setSiteReport} />
+          <SiteResults report={siteReport} onReportUpdate={handleSiteReportUpdate} />
+        )}
+
+        {/* Recent saved scans (when signed in and no live result) */}
+        {user && !report && !siteReport && !loading && (
+          <div className="mb-6">
+            <RecentScans refreshKey={scansRefreshKey} />
+          </div>
         )}
 
         {/* Empty state */}

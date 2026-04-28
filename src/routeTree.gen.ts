@@ -9,14 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ScanIdRouteImport } from './routes/scan.$id'
 import { Route as ApiSeoSiteAuditRouteImport } from './routes/api.seo-site-audit'
 import { Route as ApiSeoScanUrlsRouteImport } from './routes/api.seo-scan-urls'
 import { Route as ApiSeoAuditRouteImport } from './routes/api.seo-audit'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScanIdRoute = ScanIdRouteImport.update({
+  id: '/scan/$id',
+  path: '/scan/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSeoSiteAuditRoute = ApiSeoSiteAuditRouteImport.update({
@@ -37,54 +49,86 @@ const ApiSeoAuditRoute = ApiSeoAuditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
+  '/scan/$id': typeof ScanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
+  '/scan/$id': typeof ScanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
+  '/scan/$id': typeof ScanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/api/seo-audit'
     | '/api/seo-scan-urls'
     | '/api/seo-site-audit'
+    | '/scan/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/seo-audit' | '/api/seo-scan-urls' | '/api/seo-site-audit'
+  to:
+    | '/'
+    | '/auth'
+    | '/api/seo-audit'
+    | '/api/seo-scan-urls'
+    | '/api/seo-site-audit'
+    | '/scan/$id'
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/api/seo-audit'
     | '/api/seo-scan-urls'
     | '/api/seo-site-audit'
+    | '/scan/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   ApiSeoAuditRoute: typeof ApiSeoAuditRoute
   ApiSeoScanUrlsRoute: typeof ApiSeoScanUrlsRoute
   ApiSeoSiteAuditRoute: typeof ApiSeoSiteAuditRoute
+  ScanIdRoute: typeof ScanIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scan/$id': {
+      id: '/scan/$id'
+      path: '/scan/$id'
+      fullPath: '/scan/$id'
+      preLoaderRoute: typeof ScanIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/seo-site-audit': {
@@ -113,9 +157,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   ApiSeoAuditRoute: ApiSeoAuditRoute,
   ApiSeoScanUrlsRoute: ApiSeoScanUrlsRoute,
   ApiSeoSiteAuditRoute: ApiSeoSiteAuditRoute,
+  ScanIdRoute: ScanIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
