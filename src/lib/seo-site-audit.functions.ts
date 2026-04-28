@@ -110,10 +110,18 @@ async function runWithConcurrency<T, R>(
   return results;
 }
 
+export interface ScanProgressUpdate {
+  phase: "mapping" | "scanning" | "grading" | "complete";
+  pagesScanned: number;
+  pagesTotal: number;
+  discoveredUrlCount: number;
+}
+
 async function auditPagesWithBatch(
   fc: Firecrawl,
   urls: string[],
   warnings: string[],
+  onPageProgress?: (scanned: number) => void,
 ): Promise<PageAuditReport[]> {
   if (urls.length === 0) return [];
 
