@@ -1,4 +1,7 @@
-import type { AuditReport } from "@/lib/seo-types";
+import type { AuditReport, PageAuditReport, SiteAuditReport } from "@/lib/seo-types";
+
+/** Subset of AuditReport fields needed for non-speed scoring. */
+type PageLike = Pick<AuditReport, "onPage" | "schema">;
 
 export type IssueSeverity = "critical" | "warning" | "info";
 
