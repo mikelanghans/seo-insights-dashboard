@@ -211,7 +211,7 @@ export async function runSeoSiteAudit(
   try {
     homepageSpeed = await Promise.race([
       homepageSpeedPromise,
-      new Promise<undefined>((resolve) => setTimeout(resolve, 8_000)),
+      new Promise<undefined>((resolve) => setTimeout(resolve, 5_000)),
     ]);
   } catch {
     // Non-fatal — site audit can proceed without speed data
