@@ -28,13 +28,24 @@ function StrategyCard({ data, icon: Icon, title }: { data: PageSpeedReport; icon
       </div>
 
       {data.error ? (
-        <div className="flex items-start gap-3 rounded-lg bg-destructive/10 p-4">
-          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
-          <div>
-            <p className="text-sm font-semibold text-destructive">PageSpeed unavailable</p>
-            <p className="mt-1 text-xs text-muted-foreground">{data.error}</p>
-          </div>
-        </div>
+        (() => {
+          const rateLimited = /\b429\b|rate.?limit/i.test(data.error);
+          return (
+            <div className="flex items-start gap-3 rounded-lg bg-warning/10 p-4">
+              <AlertCircle className="h-5 w-5 shrink-0 text-warning" />
+              <div>
+                <p className="text-sm font-semibold text-warning">
+                  {rateLimited ? "PageSpeed rate-limited" : "PageSpeed unavailable"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {rateLimited
+                    ? "Google's free anonymous quota is exhausted. Wait a minute and re-run, or add a PAGESPEED_API_KEY (25,000 requests/day). Speed has been excluded from the overall grade so it's not penalized."
+                    : data.error}
+                </p>
+              </div>
+            </div>
+          );
+        })()
       ) : (
         <>
           <div className="mb-6 grid grid-cols-4 gap-2">
