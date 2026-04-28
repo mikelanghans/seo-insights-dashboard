@@ -5,6 +5,7 @@ import {
   parseOnPage,
   parseSchema,
 } from "./seo-audit.functions";
+import { auditAccessibility } from "./a11y-audit";
 import type { PageAuditReport, SiteAuditReport } from "./seo-types";
 
 export type SiteScanScope = "quick" | "standard" | "deep";
@@ -65,6 +66,7 @@ function pageReportFromDocument(url: string, doc: FirecrawlDocument | undefined)
     httpStatus: status,
     onPage: parseOnPage(html, finalUrl),
     schema: parseSchema(html),
+    accessibility: auditAccessibility(html),
   };
 }
 

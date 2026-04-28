@@ -1,4 +1,5 @@
 import type { JsonValue, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
+import { auditAccessibility } from "./a11y-audit";
 
 function decodeEntities(str: string): string {
   return str
@@ -254,6 +255,7 @@ export async function runSeoAuditForUrl(rawUrl: string) {
       onPage: page ? parseOnPage(page.html, page.finalUrl) : emptyOnPageReport(url),
       schema: page ? parseSchema(page.html) : [],
       pageSpeed: { mobile: mobileResult, desktop: desktopResult },
+      accessibility: page ? auditAccessibility(page.html) : undefined,
       crawlError,
     };
 }
