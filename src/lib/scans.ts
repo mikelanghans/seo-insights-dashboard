@@ -103,6 +103,8 @@ export async function linkRetryScan(originalId: string, retryId: string): Promis
     .eq("id", originalId);
   if (error) console.error("Failed to link retry scan:", error);
 }
+
+export async function listRecentScans(limit = 10): Promise<SavedScanSummary[]> {
   const { data, error } = await supabase
     .from("scans")
     .select(SUMMARY_COLUMNS)
