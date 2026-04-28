@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Trash2, ExternalLink, Clock } from "lucide-react";
+import { Loader2, Trash2, ExternalLink, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listRecentScans, deleteScan, type SavedScanSummary } from "@/lib/scans";
 import { toast } from "sonner";
@@ -25,17 +25,42 @@ function shortUrl(url: string): string {
   }
 }
 
+function phaseLabel(phase: SavedScanSummary["phase"]): string {
+  switch (phase) {
+    case "mapping":
+      return "Mapping site…";
+    case "scanning":
+      return "Scanning pages…";
+    case "grading":
+      return "Grading results…";
+    case "complete":
+      return "Finishing up…";
+    default:
+      return "Starting…";
+  }
+}
+
 export function RecentScans({ refreshKey }: { refreshKey?: number }) {
   const [scans, setScans] = useState<SavedScanSummary[] | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
+  // Poll while any scan is still running so the list stays live.
   useEffect(() => {
     let active = true;
-    listRecentScans(10).then((data) => {
-      if (active) setScans(data);
-    });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const tick = async () => {
+      const data = await listRecentScans(10);
+      if (!active) return;
+      setScans(data);
+      const stillRunning = data.some((s) => s.status === "pending" || s.status === "running");
+      if (stillRunning) timer = setTimeout(tick, 2500);
+    };
+    void tick();
+
     return () => {
       active = false;
+      if (timer) clearTimeout(timer);
     };
   }, [refreshKey]);
 
@@ -69,44 +94,77 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
         <span className="text-xs text-muted-foreground">({scans.length})</span>
       </div>
       <ul className="divide-y divide-border">
-        {scans.map((scan) => (
-          <li key={scan.id} className="flex items-center gap-3 py-2.5">
-            <div className="min-w-0 flex-1">
+        {scans.map((scan) => {
+          const isRunning = scan.status === "pending" || scan.status === "running";
+          const isFailed = scan.status === "failed";
+          const progressPct =
+            scan.pagesTotal > 0
+              ? Math.round((scan.pagesScanned / scan.pagesTotal) * 100)
+              : 0;
+          return (
+            <li key={scan.id} className="flex items-center gap-3 py-2.5">
+              <div className="mt-0.5 shrink-0">
+                {isRunning ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                ) : isFailed ? (
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <Link
+                  to="/scan/$id"
+                  params={{ id: scan.id }}
+                  className="block truncate text-sm font-medium text-foreground hover:text-primary"
+                >
+                  {shortUrl(scan.rootUrl)}
+                </Link>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isRunning ? (
+                    <>
+                      {phaseLabel(scan.phase)}
+                      {scan.pagesTotal > 0 && (
+                        <> · {scan.pagesScanned}/{scan.pagesTotal} pages ({progressPct}%)</>
+                      )}
+                    </>
+                  ) : isFailed ? (
+                    <span className="text-destructive">
+                      Failed{scan.errorMessage ? ` — ${scan.errorMessage}` : ""}
+                    </span>
+                  ) : (
+                    <>
+                      {scan.pagesScanned} of {scan.discoveredUrlCount} pages · {scan.scope} ·{" "}
+                      {timeAgo(scan.createdAt)}
+                    </>
+                  )}
+                </p>
+              </div>
               <Link
                 to="/scan/$id"
                 params={{ id: scan.id }}
-                className="block truncate text-sm font-medium text-foreground hover:text-primary"
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
               >
-                {shortUrl(scan.rootUrl)}
+                {isRunning ? "View" : "Open"} <ExternalLink className="h-3 w-3" />
               </Link>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {scan.pagesScanned} of {scan.discoveredUrlCount} pages · {scan.scope} · {timeAgo(scan.createdAt)}
-              </p>
-            </div>
-            <Link
-              to="/scan/$id"
-              params={{ id: scan.id }}
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-            >
-              Open <ExternalLink className="h-3 w-3" />
-            </Link>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-              onClick={() => handleDelete(scan.id)}
-              disabled={deleting === scan.id}
-              aria-label="Delete scan"
-            >
-              {deleting === scan.id ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Trash2 className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          </li>
-        ))}
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                onClick={() => handleDelete(scan.id)}
+                disabled={deleting === scan.id}
+                aria-label="Delete scan"
+              >
+                {deleting === scan.id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
