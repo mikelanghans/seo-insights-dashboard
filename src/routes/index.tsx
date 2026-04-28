@@ -28,6 +28,7 @@ function normalizeUrl(raw: string): string | null {
 import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
 import { SchemaTab } from "@/components/seo/SchemaTab";
+import { AccessibilityTab } from "@/components/seo/AccessibilityTab";
 import { GradeCard } from "@/components/seo/GradeCard";
 import { RecentScans } from "@/components/seo/RecentScans";
 import { AppHeader } from "@/components/AppHeader";
