@@ -110,6 +110,41 @@ async function runWithConcurrency<T, R>(
   return results;
 }
 
+async function auditPagesWithBatch(
+  fc: Firecrawl,
+  urls: string[],
+  warnings: string[],
+): Promise<PageAuditReport[]> {
+  if (urls.length === 0) return [];
+
+  try {
+    const job = await fc.startBatchScrape(urls, {
+      options: { formats: ["rawHtml"], onlyMainContent: false, timeout: 20_000 },
+      ignoreInvalidURLs: true,
+      maxConcurrency: 10,
+    });
+    const deadline = Date.now() + 36_000;
+    let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 6 });
+
+    while (latest.status === "scraping" && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 6 });
+    }
+
+    const docs = (latest.data ?? []) as FirecrawlDocument[];
+    if (latest.status === "scraping") {
+      warnings.push(`The scan is still running, so results include the first ${docs.length} completed page${docs.length === 1 ? "" : "s"}. Try Quick scan for faster full results.`);
+      void fc.cancelBatchScrape(job.id).catch(() => undefined);
+    }
+
+    if (docs.length === 0) return [await auditOnePage(fc, urls[0])];
+    return docs.map((doc, index) => pageReportFromDocument(doc.metadata?.sourceURL || urls[index] || urls[0], doc));
+  } catch (error) {
+    warnings.push(`Batch scanning was unavailable, so the tool scanned a smaller sample. ${error instanceof Error ? error.message : ""}`.trim());
+    return runWithConcurrency(urls.slice(0, 10), 3, (url) => auditOnePage(fc, url));
+  }
+}
+
 export async function runSeoSiteAudit(
   rawUrl: string,
   scope: SiteScanScope,
