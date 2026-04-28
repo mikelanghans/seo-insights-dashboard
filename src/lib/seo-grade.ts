@@ -309,7 +309,7 @@ const AEO_SCHEMA_TYPES = new Set([
 
 const QUESTION_RE = /^(who|what|when|where|why|how|can|do|does|is|are|should|will|which)\b|\?\s*$/i;
 
-function scoreAEO(report: AuditReport): GradeBreakdown {
+function scoreAEO(report: PageLike): GradeBreakdown {
   const op = report.onPage;
   let s = 0;
   const issues: Issue[] = [];
