@@ -1,10 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink } from "lucide-react";
+import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2 } from "lucide-react";
+
+function normalizeUrl(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const withProto = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const u = new URL(withProto);
+    if (!u.hostname.includes(".")) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
 import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
 import { SchemaTab } from "@/components/seo/SchemaTab";
@@ -28,13 +42,31 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
 
+  const normalizedUrl = normalizeUrl(url);
+  const isValid = normalizedUrl !== null;
+
+  // Simulated progress while audit runs (caps at 92% until complete)
+  useEffect(() => {
+    if (!loading) {
+      setProgress(loading ? 0 : report ? 100 : 0);
+      return;
+    }
+    setProgress(8);
+    const interval = setInterval(() => {
+      setProgress((p) => (p < 92 ? p + Math.max(1, (92 - p) * 0.06) : p));
+    }, 400);
+    return () => clearInterval(interval);
+  }, [loading, report]);
+
   async function runAudit(rawUrl?: string) {
-    const auditUrl = (rawUrl ?? urlInputRef.current?.value ?? url).trim();
+    const candidate = rawUrl ?? urlInputRef.current?.value ?? url;
+    const auditUrl = normalizeUrl(candidate);
     if (!auditUrl || loading) {
-      if (!auditUrl) setError("Enter a URL to analyze.");
+      if (!auditUrl) setError("Please enter a valid URL (e.g. example.com).");
       return;
     }
     setLoading(true);
@@ -47,6 +79,7 @@ function Index() {
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
       setReport(data as AuditReport);
+      setProgress(100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Audit failed");
     } finally {
@@ -91,16 +124,21 @@ function Index() {
 
           <form
             onSubmit={handleSubmit}
-            className="mx-auto mt-8 flex max-w-2xl flex-col gap-2 sm:flex-row"
+            className="mx-auto mt-8 flex w-full max-w-2xl flex-col gap-2 sm:flex-row sm:items-stretch"
           >
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <Globe className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={urlInputRef}
                 type="text"
+                inputMode="url"
+                autoComplete="url"
                 placeholder="example.com or https://example.com/page"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  if (error) setError(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -108,14 +146,18 @@ function Index() {
                   }
                 }}
                 disabled={loading}
-                className="h-12 pl-10 text-base shadow-[var(--shadow-card)]"
+                aria-invalid={url.length > 0 && !isValid}
+                className="h-12 pl-10 pr-10 text-base shadow-[var(--shadow-card)]"
               />
+              {isValid && !loading && (
+                <CheckCircle2 className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
+              )}
             </div>
             <Button
               type="submit"
               onClick={() => void runAudit()}
-              disabled={loading}
-              className="h-12 bg-[var(--gradient-hero)] px-6 text-base font-semibold shadow-[var(--shadow-elegant)] hover:opacity-95"
+              disabled={loading || !isValid}
+              className="h-12 w-full shrink-0 bg-[var(--gradient-hero)] px-6 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:opacity-95 sm:w-auto sm:min-w-[140px]"
             >
               {loading ? (
                 <>
@@ -131,6 +173,12 @@ function Index() {
             </Button>
           </form>
 
+          {url.length > 0 && !isValid && !error && (
+            <p className="mx-auto mt-3 max-w-2xl text-xs text-muted-foreground">
+              Enter a valid URL like <code className="rounded bg-muted px-1 py-0.5">example.com</code> to enable Analyze.
+            </p>
+          )}
+
           {error && (
             <div className="mx-auto mt-4 max-w-2xl rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
               {error}
@@ -138,10 +186,10 @@ function Index() {
           )}
         </section>
 
-        {/* Loading skeleton */}
+        {/* Loading state with progress */}
         {loading && (
           <section className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
-            <div className="flex flex-col items-center justify-center gap-4 py-16">
+            <div className="flex flex-col items-center justify-center gap-5 py-12">
               <div className="relative">
                 <div className="h-16 w-16 rounded-full border-4 border-muted" />
                 <div className="absolute inset-0 h-16 w-16 animate-spin rounded-full border-4 border-transparent border-t-primary" />
@@ -151,6 +199,13 @@ function Index() {
                 <p className="mt-1 text-sm text-muted-foreground">
                   Crawling page, parsing schema, and testing PageSpeed (mobile + desktop)
                 </p>
+              </div>
+              <div className="w-full max-w-md space-y-2">
+                <Progress value={progress} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>This usually takes 10–30 seconds</span>
+                  <span className="tabular-nums">{Math.round(progress)}%</span>
+                </div>
               </div>
             </div>
           </section>
