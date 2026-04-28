@@ -539,25 +539,25 @@ export function computeSiteGrade(site: SiteAuditReport): SiteGrade {
     });
   }
 
-  // Roll up issues by title across all pages
-  const rollupMap = new Map<
-    string,
-    { title: string; severity: IssueSeverity; pageCount: number; fix: string }
-  >();
-  for (const { grade } of pageGrades) {
+  // Roll up issues across all pages, grouped by groupKey (or title fallback).
+  const rollupMap = new Map<string, RollupIssue>();
+  for (const { page, grade } of pageGrades) {
     const seenForPage = new Set<string>();
     for (const issue of grade.topIssues) {
-      if (seenForPage.has(issue.title)) continue;
-      seenForPage.add(issue.title);
-      const existing = rollupMap.get(issue.title);
+      const key = issue.groupKey ?? issue.title;
+      if (seenForPage.has(key)) continue;
+      seenForPage.add(key);
+      const existing = rollupMap.get(key);
       if (existing) {
         existing.pageCount += 1;
+        existing.pages.push(page.requestedUrl);
       } else {
-        rollupMap.set(issue.title, {
-          title: issue.title,
+        rollupMap.set(key, {
+          title: issue.groupTitle ?? issue.title,
           severity: issue.severity,
           pageCount: 1,
           fix: issue.fix,
+          pages: [page.requestedUrl],
         });
       }
     }
