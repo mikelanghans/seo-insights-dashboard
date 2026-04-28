@@ -392,14 +392,14 @@ function Index() {
         {/* Site scans run on the dedicated /scan/$id page so progress can be tracked. */}
 
         {/* Recent saved scans (when signed in and no live result) */}
-        {user && !report && !siteReport && !loading && (
+        {user && !report && !loading && (
           <div className="mb-6">
             <RecentScans refreshKey={scansRefreshKey} />
           </div>
         )}
 
         {/* Empty state */}
-        {!report && !siteReport && !loading && !error && (
+        {!report && !loading && !error && (
           <section className="grid gap-4 sm:grid-cols-3">
             {[
               { icon: Globe, title: "On-Page SEO", desc: "Title, meta, headings, canonical, robots & alt tags" },
