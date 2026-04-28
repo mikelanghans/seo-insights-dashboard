@@ -24,6 +24,7 @@ export type Database = {
           pages_total: number
           phase: string | null
           report: Json
+          retry_scan_id: string | null
           root_url: string
           scope: string
           status: string
@@ -39,6 +40,7 @@ export type Database = {
           pages_total?: number
           phase?: string | null
           report: Json
+          retry_scan_id?: string | null
           root_url: string
           scope: string
           status?: string
@@ -54,13 +56,22 @@ export type Database = {
           pages_total?: number
           phase?: string | null
           report?: Json
+          retry_scan_id?: string | null
           root_url?: string
           scope?: string
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scans_retry_scan_id_fkey"
+            columns: ["retry_scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
