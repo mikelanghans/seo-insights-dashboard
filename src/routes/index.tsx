@@ -34,7 +34,7 @@ import { RecentScans } from "@/components/seo/RecentScans";
 import { AppHeader } from "@/components/AppHeader";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
-import { saveScan, updateScanReport } from "@/lib/scans";
+import { startScan } from "@/lib/scans";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
