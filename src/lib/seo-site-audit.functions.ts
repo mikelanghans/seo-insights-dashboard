@@ -36,43 +36,49 @@ function getFirecrawl(): Firecrawl {
   return new Firecrawl({ apiKey });
 }
 
+type FirecrawlDocument = {
+  rawHtml?: string;
+  html?: string;
+  metadata?: { sourceURL?: string; statusCode?: number; error?: string };
+};
+
+function pageReportFromDocument(url: string, doc: FirecrawlDocument | undefined): PageAuditReport {
+  const fetchedAt = new Date().toISOString();
+  const html = doc?.rawHtml || doc?.html || "";
+  const finalUrl = doc?.metadata?.sourceURL || url;
+  const status = doc?.metadata?.statusCode ?? 200;
+
+  if (!html) {
+    return {
+      requestedUrl: url,
+      fetchedAt,
+      httpStatus: status,
+      onPage: emptyOnPageReport(finalUrl),
+      schema: [],
+      crawlError: doc?.metadata?.error || "Page returned no HTML content.",
+    };
+  }
+
+  return {
+    requestedUrl: url,
+    fetchedAt,
+    httpStatus: status,
+    onPage: parseOnPage(html, finalUrl),
+    schema: parseSchema(html),
+  };
+}
+
 /** Run a scrape→parse pipeline on a single URL via Firecrawl. */
 async function auditOnePage(
   fc: Firecrawl,
   url: string,
 ): Promise<PageAuditReport> {
-  const fetchedAt = new Date().toISOString();
   try {
     const result = (await fc.scrape(url, {
       formats: ["rawHtml"],
       onlyMainContent: false,
-    })) as {
-      rawHtml?: string;
-      html?: string;
-      metadata?: { sourceURL?: string; statusCode?: number };
-    };
-    const html = result.rawHtml || result.html || "";
-    const finalUrl = result.metadata?.sourceURL || url;
-    const status = result.metadata?.statusCode ?? 200;
-
-    if (!html) {
-      return {
-        requestedUrl: url,
-        fetchedAt,
-        httpStatus: status,
-        onPage: emptyOnPageReport(finalUrl),
-        schema: [],
-        crawlError: "Page returned no HTML content.",
-      };
-    }
-
-    return {
-      requestedUrl: url,
-      fetchedAt,
-      httpStatus: status,
-      onPage: parseOnPage(html, finalUrl),
-      schema: parseSchema(html),
-    };
+    })) as FirecrawlDocument;
+    return pageReportFromDocument(url, result);
   } catch (error) {
     return {
       requestedUrl: url,
