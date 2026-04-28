@@ -26,7 +26,13 @@ function letterColor(letter: string): string {
 
 type SortKey = "score" | "url" | "issues";
 
-export function SiteResults({ report }: { report: SiteAuditReport }) {
+export function SiteResults({
+  report,
+  onReportUpdate,
+}: {
+  report: SiteAuditReport;
+  onReportUpdate?: (next: SiteAuditReport) => void;
+}) {
   const site = useMemo(() => computeSiteGrade(report), [report]);
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [expanded, setExpanded] = useState<string | null>(null);
