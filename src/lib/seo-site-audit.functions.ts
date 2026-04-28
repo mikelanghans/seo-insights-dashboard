@@ -66,6 +66,7 @@ function pageReportFromDocument(url: string, doc: FirecrawlDocument | undefined)
     httpStatus: status,
     onPage: parseOnPage(html, finalUrl),
     schema: parseSchema(html),
+    accessibility: auditAccessibility(html),
   };
 }
 
