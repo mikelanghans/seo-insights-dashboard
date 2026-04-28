@@ -1,4 +1,3 @@
-import { createServerFn } from "@tanstack/react-start";
 import type { JsonValue, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
 
 function decodeEntities(str: string): string {
@@ -229,10 +228,8 @@ async function fetchAuditHtml(url: string): Promise<{ finalUrl: string; status: 
   throw new Error(`Could not load that page. The site may be blocking crawlers or temporarily unavailable. (${lastError})`);
 }
 
-export const runSeoAudit = createServerFn({ method: "POST" })
-  .inputValidator((input: { url: string }) => input)
-  .handler(async ({ data }) => {
-    const url = normalizeAuditUrl(data.url);
+export async function runSeoAuditForUrl(rawUrl: string) {
+    const url = normalizeAuditUrl(rawUrl);
     const [pageResult, mobile, desktop] = await Promise.allSettled([
       fetchAuditHtml(url),
       fetchPageSpeed(url, "mobile"),
@@ -256,4 +253,4 @@ export const runSeoAudit = createServerFn({ method: "POST" })
       pageSpeed: { mobile: mobileResult, desktop: desktopResult },
       crawlError,
     };
-  });
+}
