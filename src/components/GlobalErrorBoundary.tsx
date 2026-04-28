@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from "react";
 import { AlertCircle, Copy, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScanErrorDrawer } from "@/components/ScanErrorDrawer";
 import { toast } from "sonner";
 
 interface ErrorContext {
@@ -13,6 +14,7 @@ interface ErrorContext {
 
 interface State {
   error: ErrorContext | null;
+  drawerOpen: boolean;
 }
 
 function buildContext(error: Error): ErrorContext {
@@ -29,10 +31,10 @@ function buildContext(error: Error): ErrorContext {
 }
 
 export class GlobalErrorBoundary extends Component<{ children: ReactNode }, State> {
-  state: State = { error: null };
+  state: State = { error: null, drawerOpen: false };
 
-  static getDerivedStateFromError(error: Error): State {
-    return { error: buildContext(error) };
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { error: buildContext(error) } as State;
   }
 
   componentDidCatch(error: Error) {
@@ -61,7 +63,10 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Stat
     this.setState({ error: buildContext(reason) });
   };
 
-  dismiss = () => this.setState({ error: null });
+  dismiss = () => this.setState({ error: null, drawerOpen: false });
+
+  openDrawer = () => this.setState({ drawerOpen: true });
+  setDrawerOpen = (open: boolean) => this.setState({ drawerOpen: open });
 
   reload = () => {
     if (typeof window !== "undefined") window.location.reload();
@@ -88,7 +93,7 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Stat
   };
 
   render() {
-    const { error } = this.state;
+    const { error, drawerOpen } = this.state;
     return (
       <>
         {error && (
@@ -101,7 +106,7 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Stat
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">Something went wrong</p>
                 <p className="mt-0.5 break-words text-xs opacity-90">{error.message}</p>
-                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] opacity-80">
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] opacity-90">
                   <span>
                     Route: <code className="font-mono">{error.pathname || "/"}</code>
                   </span>
@@ -111,6 +116,13 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Stat
                     </span>
                   )}
                   <span>{new Date(error.timestamp).toLocaleTimeString()}</span>
+                  <button
+                    type="button"
+                    onClick={this.openDrawer}
+                    className="font-medium underline underline-offset-2 hover:opacity-100"
+                  >
+                    View scan error details
+                  </button>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-1">
@@ -145,6 +157,16 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Stat
               </div>
             </div>
           </div>
+        )}
+        {error && (
+          <ScanErrorDrawer
+            open={drawerOpen}
+            onOpenChange={this.setDrawerOpen}
+            scanId={error.scanId}
+            errorMessage={error.message}
+            pathname={error.pathname}
+            timestamp={error.timestamp}
+          />
         )}
         {this.props.children}
       </>
