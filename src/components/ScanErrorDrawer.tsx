@@ -223,6 +223,50 @@ export function ScanErrorDrawer({
             )}
           </section>
 
+          {chain.length > 0 && (
+            <section>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Retry timeline ({chain.length} {chain.length === 1 ? "scan" : "scans"})
+              </h3>
+              <ol className="relative space-y-4 border-l border-border pl-5">
+                {chain.map((hop, idx) => (
+                  <li key={hop.id} className="relative">
+                    <span
+                      className={`absolute -left-[26px] top-1 h-3 w-3 rounded-full ring-2 ring-background ${statusDot(hop.status)}`}
+                      aria-hidden
+                    />
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="text-xs font-semibold">
+                        {idx === 0 ? "Original scan" : `Retry #${idx}`}
+                      </span>
+                      <span className="font-mono text-[11px] uppercase text-muted-foreground">
+                        {hop.status}
+                        {hop.phase ? ` · ${hop.phase}` : ""}
+                      </span>
+                      {hop.id === scan?.id && (
+                        <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 break-all text-[11px] text-muted-foreground">
+                      <code className="font-mono">{hop.id}</code>
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      {new Date(hop.createdAt).toLocaleString()} · {hop.pagesScanned}/
+                      {hop.pagesTotal} pages
+                    </div>
+                    {hop.errorMessage && (
+                      <div className="mt-1 break-words text-[11px] text-destructive">
+                        {hop.errorMessage}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
+
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Request payload
