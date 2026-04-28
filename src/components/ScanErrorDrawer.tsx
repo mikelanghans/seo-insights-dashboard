@@ -35,6 +35,7 @@ export function ScanErrorDrawer({
 }: Props) {
   const [activeScanId, setActiveScanId] = useState<string | null>(scanId);
   const [scan, setScan] = useState<SavedScanSummary | null>(null);
+  const [chain, setChain] = useState<SavedScanSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -44,49 +45,50 @@ export function ScanErrorDrawer({
     if (open) setActiveScanId(scanId);
   }, [open, scanId]);
 
-  // Load + poll the currently tracked scan, following any persisted retry chain.
+  // Load + poll. Always walks from the ORIGINAL scanId so the timeline shows
+  // every hop, then tracks the latest as the "active" scan.
   useEffect(() => {
-    if (!open || !activeScanId) {
+    if (!open || !scanId) {
       setScan(null);
+      setChain([]);
       setNotFound(false);
       return;
     }
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const resolveLatest = async (id: string): Promise<SavedScanSummary | null> => {
-      // Walk retry_scan_id chain so a refreshed page sees the most recent retry.
+    const loadChain = async (): Promise<SavedScanSummary[]> => {
       const seen = new Set<string>();
-      let current = await getScanStatus(id);
-      while (current?.retryScanId && !seen.has(current.retryScanId)) {
-        seen.add(current.retryScanId);
-        const next = await getScanStatus(current.retryScanId);
-        if (!next) break;
-        current = next;
+      const acc: SavedScanSummary[] = [];
+      let nextId: string | null = scanId;
+      while (nextId && !seen.has(nextId)) {
+        seen.add(nextId);
+        const s: SavedScanSummary | null = await getScanStatus(nextId);
+        if (!s) break;
+        acc.push(s);
+        nextId = s.retryScanId;
       }
-      return current;
+      return acc;
     };
 
     const tick = async (initial: boolean) => {
       if (initial) setLoading(true);
-      const s = initial
-        ? await resolveLatest(activeScanId)
-        : await getScanStatus(activeScanId);
+      const hops = await loadChain();
       if (cancelled) return;
-      if (!s) {
+      if (hops.length === 0) {
         setNotFound(true);
         setScan(null);
+        setChain([]);
       } else {
         setNotFound(false);
-        setScan(s);
-        // If we walked the chain, update activeScanId so polling targets the latest row.
-        if (initial && s.id !== activeScanId) {
-          setActiveScanId(s.id);
-          return; // effect will re-run with the new id
-        }
+        setChain(hops);
+        const latest = hops[hops.length - 1];
+        setScan(latest);
+        if (latest.id !== activeScanId) setActiveScanId(latest.id);
       }
       if (initial) setLoading(false);
-      if (s && (s.status === "pending" || s.status === "running")) {
+      const latest = hops[hops.length - 1];
+      if (latest && (latest.status === "pending" || latest.status === "running")) {
         timer = setTimeout(() => tick(false), 2000);
       }
     };
@@ -96,7 +98,9 @@ export function ScanErrorDrawer({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [open, activeScanId]);
+    // activeScanId intentionally excluded — chain walk is anchored at scanId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, scanId]);
 
   const handleRetry = async () => {
     if (!scan) {
