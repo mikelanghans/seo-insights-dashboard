@@ -35,58 +35,61 @@ export function ScanErrorDrawer({
 }: Props) {
   const [activeScanId, setActiveScanId] = useState<string | null>(scanId);
   const [scan, setScan] = useState<SavedScanSummary | null>(null);
+  const [chain, setChain] = useState<SavedScanSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Reset to the original scanId whenever the drawer opens with a new error.
   useEffect(() => {
     if (open) setActiveScanId(scanId);
   }, [open, scanId]);
 
-  // Load + poll the currently tracked scan, following any persisted retry chain.
+  // Load + poll. Always walks from the ORIGINAL scanId so the timeline shows
+  // every hop, then tracks the latest as the "active" scan.
   useEffect(() => {
-    if (!open || !activeScanId) {
+    if (!open || !scanId) {
       setScan(null);
+      setChain([]);
       setNotFound(false);
       return;
     }
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const resolveLatest = async (id: string): Promise<SavedScanSummary | null> => {
-      // Walk retry_scan_id chain so a refreshed page sees the most recent retry.
+    const loadChain = async (): Promise<SavedScanSummary[]> => {
       const seen = new Set<string>();
-      let current = await getScanStatus(id);
-      while (current?.retryScanId && !seen.has(current.retryScanId)) {
-        seen.add(current.retryScanId);
-        const next = await getScanStatus(current.retryScanId);
-        if (!next) break;
-        current = next;
+      const acc: SavedScanSummary[] = [];
+      let nextId: string | null = scanId;
+      while (nextId && !seen.has(nextId)) {
+        seen.add(nextId);
+        const s: SavedScanSummary | null = await getScanStatus(nextId);
+        if (!s) break;
+        acc.push(s);
+        nextId = s.retryScanId;
       }
-      return current;
+      return acc;
     };
 
     const tick = async (initial: boolean) => {
       if (initial) setLoading(true);
-      const s = initial
-        ? await resolveLatest(activeScanId)
-        : await getScanStatus(activeScanId);
+      const hops = await loadChain();
       if (cancelled) return;
-      if (!s) {
+      if (hops.length === 0) {
         setNotFound(true);
         setScan(null);
+        setChain([]);
       } else {
         setNotFound(false);
-        setScan(s);
-        // If we walked the chain, update activeScanId so polling targets the latest row.
-        if (initial && s.id !== activeScanId) {
-          setActiveScanId(s.id);
-          return; // effect will re-run with the new id
-        }
+        setChain(hops);
+        const latest = hops[hops.length - 1];
+        setScan(latest);
+        if (latest.id !== activeScanId) setActiveScanId(latest.id);
       }
       if (initial) setLoading(false);
-      if (s && (s.status === "pending" || s.status === "running")) {
+      const latest = hops[hops.length - 1];
+      if (latest && (latest.status === "pending" || latest.status === "running")) {
         timer = setTimeout(() => tick(false), 2000);
       }
     };
@@ -96,7 +99,8 @@ export function ScanErrorDrawer({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [open, activeScanId]);
+    // activeScanId intentionally excluded — chain walk is anchored at scanId.
+  }, [open, scanId, refreshKey]);
 
   const handleRetry = async () => {
     if (!scan) {
@@ -115,6 +119,7 @@ export function ScanErrorDrawer({
     setRetrying(false);
     toast.success("Scan re-queued");
     setActiveScanId(result.scanId);
+    setRefreshKey((k) => k + 1);
   };
 
   const payload = {
@@ -126,6 +131,13 @@ export function ScanErrorDrawer({
   };
 
   const canRetry = !!scan && !retrying && scan.status !== "running" && scan.status !== "pending";
+
+  const statusDot = (status: string) => {
+    if (status === "complete") return "bg-emerald-500";
+    if (status === "failed") return "bg-destructive";
+    if (status === "running" || status === "pending") return "bg-amber-500 animate-pulse";
+    return "bg-muted-foreground";
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -210,6 +222,50 @@ export function ScanErrorDrawer({
               </p>
             )}
           </section>
+
+          {chain.length > 0 && (
+            <section>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Retry timeline ({chain.length} {chain.length === 1 ? "scan" : "scans"})
+              </h3>
+              <ol className="relative space-y-4 border-l border-border pl-5">
+                {chain.map((hop, idx) => (
+                  <li key={hop.id} className="relative">
+                    <span
+                      className={`absolute -left-[26px] top-1 h-3 w-3 rounded-full ring-2 ring-background ${statusDot(hop.status)}`}
+                      aria-hidden
+                    />
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="text-xs font-semibold">
+                        {idx === 0 ? "Original scan" : `Retry #${idx}`}
+                      </span>
+                      <span className="font-mono text-[11px] uppercase text-muted-foreground">
+                        {hop.status}
+                        {hop.phase ? ` · ${hop.phase}` : ""}
+                      </span>
+                      {hop.id === scan?.id && (
+                        <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 break-all text-[11px] text-muted-foreground">
+                      <code className="font-mono">{hop.id}</code>
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      {new Date(hop.createdAt).toLocaleString()} · {hop.pagesScanned}/
+                      {hop.pagesTotal} pages
+                    </div>
+                    {hop.errorMessage && (
+                      <div className="mt-1 break-words text-[11px] text-destructive">
+                        {hop.errorMessage}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          )}
 
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
