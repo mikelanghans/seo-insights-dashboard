@@ -70,7 +70,7 @@ export async function startScan(params: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(params),
+    body: JSON.stringify({ url: params.rootUrl, scope: params.scope }),
   });
   const data = (await res.json().catch(() => null)) as
     | { scanId?: string; error?: string }
