@@ -63,7 +63,10 @@ export class GlobalErrorBoundary extends Component<{ children: ReactNode }, Stat
     this.setState({ error: buildContext(reason) });
   };
 
-  dismiss = () => this.setState({ error: null });
+  dismiss = () => this.setState({ error: null, drawerOpen: false });
+
+  openDrawer = () => this.setState({ drawerOpen: true });
+  setDrawerOpen = (open: boolean) => this.setState({ drawerOpen: open });
 
   reload = () => {
     if (typeof window !== "undefined") window.location.reload();
