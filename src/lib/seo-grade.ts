@@ -41,7 +41,7 @@ function letterFor(score: number): OverallGrade["letter"] {
   return "F";
 }
 
-function scoreOnPage(report: AuditReport): GradeBreakdown {
+function scoreOnPage(report: PageLike): GradeBreakdown {
   const op = report.onPage;
   let s = 0;
   const issues: Issue[] = [];
