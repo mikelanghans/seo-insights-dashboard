@@ -197,8 +197,8 @@ export async function runSeoSiteAudit(
     );
   }
 
-  // 2. Scrape + parse each page (with bounded concurrency)
-  const pages = await runWithConcurrency(targets, 5, (url) => auditOnePage(fc, url));
+  // 2. Scrape + parse pages with a time budget so the API returns useful partial results instead of timing out.
+  const pages = await auditPagesWithBatch(fc, targets, warnings);
 
   // 3. Run PageSpeed once on the homepage so the site grade can include it
   let homepageSpeed: SiteAuditReport["homepageSpeed"];
