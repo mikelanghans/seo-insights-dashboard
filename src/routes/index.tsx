@@ -42,13 +42,31 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
 
+  const normalizedUrl = normalizeUrl(url);
+  const isValid = normalizedUrl !== null;
+
+  // Simulated progress while audit runs (caps at 92% until complete)
+  useEffect(() => {
+    if (!loading) {
+      setProgress(loading ? 0 : report ? 100 : 0);
+      return;
+    }
+    setProgress(8);
+    const interval = setInterval(() => {
+      setProgress((p) => (p < 92 ? p + Math.max(1, (92 - p) * 0.06) : p));
+    }, 400);
+    return () => clearInterval(interval);
+  }, [loading, report]);
+
   async function runAudit(rawUrl?: string) {
-    const auditUrl = (rawUrl ?? urlInputRef.current?.value ?? url).trim();
+    const candidate = rawUrl ?? urlInputRef.current?.value ?? url;
+    const auditUrl = normalizeUrl(candidate);
     if (!auditUrl || loading) {
-      if (!auditUrl) setError("Enter a URL to analyze.");
+      if (!auditUrl) setError("Please enter a valid URL (e.g. example.com).");
       return;
     }
     setLoading(true);
@@ -61,6 +79,7 @@ function Index() {
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
       setReport(data as AuditReport);
+      setProgress(100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Audit failed");
     } finally {
