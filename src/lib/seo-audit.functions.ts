@@ -232,29 +232,43 @@ async function fetchAuditHtml(url: string): Promise<{ finalUrl: string; status: 
   throw new Error(`Could not load that page. The site may be blocking crawlers or temporarily unavailable. (${lastError})`);
 }
 
-export async function runSeoAuditForUrl(rawUrl: string) {
+export async function runSeoAuditForUrl(rawUrl: string, auditType: "seo" | "a11y" = "seo") {
     const url = normalizeAuditUrl(rawUrl);
-    const [pageResult, mobile, desktop] = await Promise.allSettled([
-      fetchAuditHtml(url),
-      fetchPageSpeed(url, "mobile"),
-      fetchPageSpeed(url, "desktop"),
-    ]);
+    const tasks: Promise<unknown>[] = [fetchAuditHtml(url)];
+    if (auditType === "seo") {
+      tasks.push(fetchPageSpeed(url, "mobile"));
+      tasks.push(fetchPageSpeed(url, "desktop"));
+    }
+    const settled = await Promise.allSettled(tasks);
+    const pageResult = settled[0] as PromiseSettledResult<Awaited<ReturnType<typeof fetchAuditHtml>>>;
     const page = pageResult.status === "fulfilled" ? pageResult.value : null;
-    const mobileResult = mobile.status === "fulfilled" ? mobile.value : await fetchPageSpeed(url, "mobile");
-    const desktopResult = desktop.status === "fulfilled" ? desktop.value : await fetchPageSpeed(url, "desktop");
     const crawlError = pageResult.status === "rejected"
       ? pageResult.reason instanceof Error
         ? pageResult.reason.message
         : "Could not load that page."
       : undefined;
 
+    let pageSpeed: { mobile: PageSpeedReport; desktop: PageSpeedReport } | undefined;
+    if (auditType === "seo") {
+      const mobile = settled[1] as PromiseSettledResult<PageSpeedReport>;
+      const desktop = settled[2] as PromiseSettledResult<PageSpeedReport>;
+      pageSpeed = {
+        mobile: mobile.status === "fulfilled" ? mobile.value : await fetchPageSpeed(url, "mobile"),
+        desktop: desktop.status === "fulfilled" ? desktop.value : await fetchPageSpeed(url, "desktop"),
+      };
+    }
+
     return {
       requestedUrl: url,
       fetchedAt: new Date().toISOString(),
       httpStatus: page?.status ?? 0,
+      auditType,
       onPage: page ? parseOnPage(page.html, page.finalUrl) : emptyOnPageReport(url),
-      schema: page ? parseSchema(page.html) : [],
-      pageSpeed: { mobile: mobileResult, desktop: desktopResult },
+      schema: auditType === "seo" && page ? parseSchema(page.html) : [],
+      pageSpeed: pageSpeed ?? {
+        mobile: { strategy: "mobile" as const, performanceScore: null, seoScore: null, accessibilityScore: null, bestPracticesScore: null, metrics: { lcp: null, fid: null, cls: null, fcp: null, ttfb: null, inp: null }, error: "Skipped (accessibility-only scan)" },
+        desktop: { strategy: "desktop" as const, performanceScore: null, seoScore: null, accessibilityScore: null, bestPracticesScore: null, metrics: { lcp: null, fid: null, cls: null, fcp: null, ttfb: null, inp: null }, error: "Skipped (accessibility-only scan)" },
+      },
       accessibility: page ? auditAccessibility(page.html) : undefined,
       crawlError,
     };
