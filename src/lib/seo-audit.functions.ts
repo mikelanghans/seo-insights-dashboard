@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/start-client-core";
+import { createServerFn } from "@tanstack/react-start";
 import type { JsonValue, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
 
 function decodeEntities(str: string): string {
