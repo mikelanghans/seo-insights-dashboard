@@ -49,6 +49,7 @@ export interface AuditReport {
   onPage: OnPageReport;
   schema: SchemaItem[];
   pageSpeed: { mobile: PageSpeedReport; desktop: PageSpeedReport };
+  accessibility?: A11yReport;
   crawlError?: string;
 }
 
@@ -59,6 +60,7 @@ export interface PageAuditReport {
   httpStatus: number;
   onPage: OnPageReport;
   schema: SchemaItem[];
+  accessibility?: A11yReport;
   crawlError?: string;
 }
 
