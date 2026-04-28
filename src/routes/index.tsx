@@ -21,6 +21,8 @@ function normalizeUrl(raw: string): string | null {
 import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
 import { SchemaTab } from "@/components/seo/SchemaTab";
+import { GradeCard } from "@/components/seo/GradeCard";
+import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport } from "@/lib/seo-types";
 
 export const Route = createFileRoute("/")({
@@ -259,6 +261,8 @@ function Index() {
                 The page blocked the HTML crawl, so On-Page SEO and Schema may be limited. Page Speed still ran where available.
               </div>
             )}
+
+            <GradeCard grade={computeGrade(report)} />
 
             <Tabs defaultValue="onpage" className="w-full">
               <TabsList className="grid w-full grid-cols-3 bg-card shadow-[var(--shadow-card)] h-auto p-1">
