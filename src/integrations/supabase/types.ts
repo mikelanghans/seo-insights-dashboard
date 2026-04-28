@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       scans: {
         Row: {
+          brand_aura_user_id: string | null
           created_at: string
           discovered_url_count: number
           error_message: string | null
@@ -27,11 +28,13 @@ export type Database = {
           retry_scan_id: string | null
           root_url: string
           scope: string
+          source: string
           status: string
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
+          brand_aura_user_id?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
@@ -43,11 +46,13 @@ export type Database = {
           retry_scan_id?: string | null
           root_url: string
           scope: string
+          source?: string
           status?: string
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
+          brand_aura_user_id?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
@@ -59,9 +64,10 @@ export type Database = {
           retry_scan_id?: string | null
           root_url?: string
           scope?: string
+          source?: string
           status?: string
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
