@@ -82,7 +82,7 @@ async function auditOnePage(
   } catch (error) {
     return {
       requestedUrl: url,
-      fetchedAt,
+      fetchedAt: new Date().toISOString(),
       httpStatus: 0,
       onPage: emptyOnPageReport(url),
       schema: [],
