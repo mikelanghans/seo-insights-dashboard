@@ -60,7 +60,7 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState("https://");
   const [mode, setMode] = useState<ScanMode>("single");
   const [scope, setScope] = useState<SiteScope>("standard");
   const [loading, setLoading] = useState(false);
