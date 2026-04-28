@@ -18,33 +18,45 @@ export type Database = {
         Row: {
           created_at: string
           discovered_url_count: number
+          error_message: string | null
           id: string
           pages_scanned: number
+          pages_total: number
+          phase: string | null
           report: Json
           root_url: string
           scope: string
+          status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           discovered_url_count?: number
+          error_message?: string | null
           id?: string
           pages_scanned?: number
+          pages_total?: number
+          phase?: string | null
           report: Json
           root_url: string
           scope: string
+          status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           discovered_url_count?: number
+          error_message?: string | null
           id?: string
           pages_scanned?: number
+          pages_total?: number
+          phase?: string | null
           report?: Json
           root_url?: string
           scope?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }

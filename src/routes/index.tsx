@@ -29,12 +29,11 @@ import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
 import { SchemaTab } from "@/components/seo/SchemaTab";
 import { GradeCard } from "@/components/seo/GradeCard";
-import { SiteResults } from "@/components/seo/SiteResults";
 import { RecentScans } from "@/components/seo/RecentScans";
 import { AppHeader } from "@/components/AppHeader";
 import { computeGrade } from "@/lib/seo-grade";
-import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
-import { saveScan, updateScanReport } from "@/lib/scans";
+import type { AuditReport } from "@/lib/seo-types";
+import { startScan } from "@/lib/scans";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -75,13 +74,11 @@ function Index() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
-  const [siteReport, setSiteReport] = useState<SiteAuditReport | null>(null);
-  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const [scansRefreshKey, setScansRefreshKey] = useState(0);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
-  const hasAnyResult = report !== null || siteReport !== null;
+  const hasAnyResult = report !== null;
 
   // Simulated progress while audit runs (caps at 92% until complete)
   useEffect(() => {
@@ -116,36 +113,31 @@ function Index() {
     setLoading(true);
     setError(null);
     setReport(null);
-    setSiteReport(null);
-    setCurrentScanId(null);
     try {
-      const endpoint = mode === "site" ? "/api/seo-site-audit" : "/api/seo-audit";
-      const body = mode === "site" ? { url: auditUrl, scope } : { url: auditUrl };
-      const response = await fetch(endpoint, {
+      if (mode === "site") {
+        // Async flow: server creates a pending scan row, we redirect to its detail page where progress polls live.
+        const result = await startScan({ rootUrl: auditUrl, scope });
+        if (activeAuditIdRef.current !== auditId) return;
+        if ("error" in result) throw new Error(result.error);
+        toast.success("Scan started", {
+          description: "Tracking progress on the scan page.",
+        });
+        setScansRefreshKey((k) => k + 1);
+        void navigate({ to: "/scan/$id", params: { id: result.scanId } });
+        return;
+      }
+
+      const response = await fetch("/api/seo-audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ url: auditUrl }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(data?.error || "Audit failed");
       }
       if (activeAuditIdRef.current !== auditId) return;
-      if (mode === "site") {
-        const site = data as SiteAuditReport;
-        setSiteReport(site);
-        // Persist site scans so we can revisit / scan more later
-        const id = await saveScan({ rootUrl: auditUrl, scope, report: site });
-        if (id && activeAuditIdRef.current === auditId) {
-          setCurrentScanId(id);
-          setScansRefreshKey((k) => k + 1);
-          toast.success("Scan saved", {
-            description: "Find it under Recent scans anytime.",
-          });
-        }
-      } else {
-        setReport(data as AuditReport);
-      }
+      setReport(data as AuditReport);
       setProgress(100);
     } catch (err) {
       if (activeAuditIdRef.current !== auditId) return;
@@ -155,14 +147,6 @@ function Index() {
         auditInFlightRef.current = false;
         setLoading(false);
       }
-    }
-  }
-
-  function handleSiteReportUpdate(next: SiteAuditReport) {
-    setSiteReport(next);
-    if (currentScanId) {
-      void updateScanReport(currentScanId, next);
-      setScansRefreshKey((k) => k + 1);
     }
   }
 
@@ -404,20 +388,17 @@ function Index() {
           </section>
         )}
 
-        {/* Site results */}
-        {siteReport && !loading && (
-          <SiteResults report={siteReport} onReportUpdate={handleSiteReportUpdate} />
-        )}
+        {/* Site scans run on the dedicated /scan/$id page so progress can be tracked. */}
 
         {/* Recent saved scans (when signed in and no live result) */}
-        {user && !report && !siteReport && !loading && (
+        {user && !report && !loading && (
           <div className="mb-6">
             <RecentScans refreshKey={scansRefreshKey} />
           </div>
         )}
 
         {/* Empty state */}
-        {!report && !siteReport && !loading && !error && (
+        {!report && !loading && !error && (
           <section className="grid gap-4 sm:grid-cols-3">
             {[
               { icon: Globe, title: "On-Page SEO", desc: "Title, meta, headings, canonical, robots & alt tags" },

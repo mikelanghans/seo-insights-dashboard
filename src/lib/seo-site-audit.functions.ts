@@ -110,10 +110,18 @@ async function runWithConcurrency<T, R>(
   return results;
 }
 
+export interface ScanProgressUpdate {
+  phase: "mapping" | "scanning" | "grading" | "complete";
+  pagesScanned: number;
+  pagesTotal: number;
+  discoveredUrlCount: number;
+}
+
 async function auditPagesWithBatch(
   fc: Firecrawl,
   urls: string[],
   warnings: string[],
+  onPageProgress?: (scanned: number) => void,
 ): Promise<PageAuditReport[]> {
   if (urls.length === 0) return [];
 
@@ -125,10 +133,12 @@ async function auditPagesWithBatch(
     });
     const deadline = Date.now() + 18_000;
     let latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
+    onPageProgress?.((latest.data ?? []).length);
 
     while (latest.status === "scraping" && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       latest = await fc.getBatchScrapeStatus(job.id, { autoPaginate: true, maxResults: urls.length, maxWaitTime: 2 });
+      onPageProgress?.((latest.data ?? []).length);
     }
 
     const docs = (latest.data ?? []) as FirecrawlDocument[];
@@ -148,10 +158,13 @@ async function auditPagesWithBatch(
 export async function runSeoSiteAudit(
   rawUrl: string,
   scope: SiteScanScope,
+  onProgress?: (update: ScanProgressUpdate) => void,
 ): Promise<SiteAuditReport> {
   const rootUrl = normalizeRoot(rawUrl);
   const limit = SCOPE_LIMITS[scope] ?? SCOPE_LIMITS.standard;
   const warnings: string[] = [];
+
+  onProgress?.({ phase: "mapping", pagesScanned: 0, pagesTotal: 0, discoveredUrlCount: 0 });
 
   const fc = getFirecrawl();
   const homepageSpeedPromise = Promise.all([
@@ -184,7 +197,6 @@ export async function runSeoSiteAudit(
   for (const candidate of [rootUrl, ...allLinks]) {
     try {
       const u = new URL(candidate);
-      // Strip fragments, normalize trailing slash for de-dup
       u.hash = "";
       const key = u.toString();
       if (!seen.has(key)) {
@@ -203,8 +215,29 @@ export async function runSeoSiteAudit(
     );
   }
 
+  onProgress?.({
+    phase: "scanning",
+    pagesScanned: 0,
+    pagesTotal: targets.length,
+    discoveredUrlCount: ordered.length,
+  });
+
   // 2. Scrape + parse pages with a time budget so the API returns useful partial results instead of timing out.
-  const pages = await auditPagesWithBatch(fc, targets, warnings);
+  const pages = await auditPagesWithBatch(fc, targets, warnings, (scanned) => {
+    onProgress?.({
+      phase: "scanning",
+      pagesScanned: scanned,
+      pagesTotal: targets.length,
+      discoveredUrlCount: ordered.length,
+    });
+  });
+
+  onProgress?.({
+    phase: "grading",
+    pagesScanned: pages.length,
+    pagesTotal: targets.length,
+    discoveredUrlCount: ordered.length,
+  });
 
   // 3. Run PageSpeed once on the homepage so the site grade can include it
   let homepageSpeed: SiteAuditReport["homepageSpeed"];
@@ -216,6 +249,13 @@ export async function runSeoSiteAudit(
   } catch {
     // Non-fatal — site audit can proceed without speed data
   }
+
+  onProgress?.({
+    phase: "complete",
+    pagesScanned: pages.length,
+    pagesTotal: targets.length,
+    discoveredUrlCount: ordered.length,
+  });
 
   return {
     rootUrl,
