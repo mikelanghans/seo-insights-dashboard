@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2, FileText, Layers } from "lucide-react";
+import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2, FileText, Layers, Eye } from "lucide-react";
 
 function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
