@@ -100,8 +100,7 @@ export function ScanErrorDrawer({
       if (timer) clearTimeout(timer);
     };
     // activeScanId intentionally excluded — chain walk is anchored at scanId.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, scanId]);
+  }, [open, scanId, refreshKey]);
 
   const handleRetry = async () => {
     if (!scan) {
