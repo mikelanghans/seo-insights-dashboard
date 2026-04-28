@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2, FileText, Layers } from "lucide-react";
 
 function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -22,8 +29,18 @@ import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
 import { SchemaTab } from "@/components/seo/SchemaTab";
 import { GradeCard } from "@/components/seo/GradeCard";
+import { SiteResults } from "@/components/seo/SiteResults";
 import { computeGrade } from "@/lib/seo-grade";
-import type { AuditReport } from "@/lib/seo-types";
+import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
+
+type ScanMode = "single" | "site";
+type SiteScope = "quick" | "standard" | "deep";
+
+const SCOPE_LABELS: Record<SiteScope, { label: string; pages: number; desc: string }> = {
+  quick: { label: "Quick", pages: 25, desc: "up to 25 pages · ~30s" },
+  standard: { label: "Standard", pages: 100, desc: "up to 100 pages · ~2min" },
+  deep: { label: "Deep", pages: 500, desc: "up to 500 pages · several min" },
+};
 
 export const Route = createFileRoute("/")({
   component: Index,
