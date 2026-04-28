@@ -224,7 +224,18 @@ export async function runSeoSiteAudit(
     pagesScanned: pages.length,
     pages,
     discoveredUrlCount: ordered.length,
+    discoveredUrls: ordered,
     homepageSpeed,
     warnings: warnings.length ? warnings : undefined,
   };
+}
+
+/** Scan a specific list of URLs (used for follow-up "scan more pages" requests). */
+export async function runSeoUrlScan(urls: string[]): Promise<PageAuditReport[]> {
+  if (urls.length === 0) return [];
+  // Hard cap to keep request bounded
+  const targets = urls.slice(0, 50);
+  const fc = getFirecrawl();
+  const warnings: string[] = [];
+  return auditPagesWithBatch(fc, targets, warnings);
 }
