@@ -46,4 +46,5 @@ export interface AuditReport {
   onPage: OnPageReport;
   schema: SchemaItem[];
   pageSpeed: { mobile: PageSpeedReport; desktop: PageSpeedReport };
+  crawlError?: string;
 }
