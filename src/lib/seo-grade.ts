@@ -10,6 +10,10 @@ export interface Issue {
   title: string;
   description: string;
   fix: string;
+  /** Canonical group key so variants (e.g. different counts) merge in site rollup. */
+  groupKey?: string;
+  /** Clean human label for the rollup, without per-page numbers. */
+  groupTitle?: string;
 }
 
 export interface GradeBreakdown {
@@ -55,6 +59,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
       issues.push({
         severity: "warning",
         title: `Title tag length is ${op.titleLength} characters`,
+        groupKey: "title-length",
+        groupTitle: op.titleLength < 30 ? "Title tag too short" : "Title tag too long",
         description:
           op.titleLength < 30
             ? "Your title is too short to clearly describe the page and capture relevant keywords."
@@ -80,6 +86,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
       issues.push({
         severity: "warning",
         title: `Meta description length is ${op.metaDescriptionLength} characters`,
+        groupKey: "meta-length",
+        groupTitle: op.metaDescriptionLength < 70 ? "Meta description too short" : "Meta description too long",
         description:
           op.metaDescriptionLength < 70
             ? "Description is too short to be useful as a search snippet."
@@ -104,6 +112,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
     issues.push({
       severity: "warning",
       title: `Page has ${op.h1Count} H1 tags`,
+      groupKey: "multiple-h1",
+      groupTitle: "Multiple H1 tags on page",
       description: "Multiple H1s dilute the primary topic signal for search engines and screen readers.",
       fix: "Keep exactly one H1 per page describing the main topic. Demote the others to H2.",
     });
@@ -156,6 +166,8 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
       issues.push({
         severity: op.images.missingAlt >= 5 ? "warning" : "info",
         title: `${op.images.missingAlt} of ${op.images.total} images missing alt text`,
+        groupKey: "images-missing-alt",
+        groupTitle: "Images missing alt text",
         description:
           "Alt text helps search engines understand images and is required for accessibility.",
         fix: 'Add a descriptive alt="…" attribute to every meaningful <img>. Use alt="" for decorative images.',
@@ -461,11 +473,20 @@ export function computePageGrade(page: PageAuditReport): OverallGrade {
   return { score, letter, summary, breakdown, topIssues };
 }
 
+export interface RollupIssue {
+  title: string;
+  severity: IssueSeverity;
+  pageCount: number;
+  fix: string;
+  /** URLs of pages affected by this issue group. */
+  pages: string[];
+}
+
 export interface SiteGrade {
   overall: OverallGrade;
   pageGrades: Array<{ page: PageAuditReport; grade: OverallGrade }>;
-  /** Aggregated issue counts across all pages, by title. */
-  issueRollup: Array<{ title: string; severity: IssueSeverity; pageCount: number; fix: string }>;
+  /** Aggregated issue counts across all pages, grouped by issue type. */
+  issueRollup: RollupIssue[];
 }
 
 export function computeSiteGrade(site: SiteAuditReport): SiteGrade {
@@ -518,25 +539,25 @@ export function computeSiteGrade(site: SiteAuditReport): SiteGrade {
     });
   }
 
-  // Roll up issues by title across all pages
-  const rollupMap = new Map<
-    string,
-    { title: string; severity: IssueSeverity; pageCount: number; fix: string }
-  >();
-  for (const { grade } of pageGrades) {
+  // Roll up issues across all pages, grouped by groupKey (or title fallback).
+  const rollupMap = new Map<string, RollupIssue>();
+  for (const { page, grade } of pageGrades) {
     const seenForPage = new Set<string>();
     for (const issue of grade.topIssues) {
-      if (seenForPage.has(issue.title)) continue;
-      seenForPage.add(issue.title);
-      const existing = rollupMap.get(issue.title);
+      const key = issue.groupKey ?? issue.title;
+      if (seenForPage.has(key)) continue;
+      seenForPage.add(key);
+      const existing = rollupMap.get(key);
       if (existing) {
         existing.pageCount += 1;
+        existing.pages.push(page.requestedUrl);
       } else {
-        rollupMap.set(issue.title, {
-          title: issue.title,
+        rollupMap.set(key, {
+          title: issue.groupTitle ?? issue.title,
           severity: issue.severity,
           pageCount: 1,
           fix: issue.fix,
+          pages: [page.requestedUrl],
         });
       }
     }
