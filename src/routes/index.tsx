@@ -66,6 +66,8 @@ function Index() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const auditInFlightRef = useRef(false);
   const activeAuditIdRef = useRef(0);
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [url, setUrl] = useState("https://");
   const [mode, setMode] = useState<ScanMode>("single");
   const [scope, setScope] = useState<SiteScope>("standard");
@@ -74,6 +76,8 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [siteReport, setSiteReport] = useState<SiteAuditReport | null>(null);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
+  const [scansRefreshKey, setScansRefreshKey] = useState(0);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
@@ -102,6 +106,10 @@ function Index() {
       if (!auditUrl) setError("Please enter a valid URL (e.g. example.com).");
       return;
     }
+    if (!user) {
+      void navigate({ to: "/auth" });
+      return;
+    }
     auditInFlightRef.current = true;
     const auditId = activeAuditIdRef.current + 1;
     activeAuditIdRef.current = auditId;
@@ -109,6 +117,7 @@ function Index() {
     setError(null);
     setReport(null);
     setSiteReport(null);
+    setCurrentScanId(null);
     try {
       const endpoint = mode === "site" ? "/api/seo-site-audit" : "/api/seo-audit";
       const body = mode === "site" ? { url: auditUrl, scope } : { url: auditUrl };
@@ -123,7 +132,17 @@ function Index() {
       }
       if (activeAuditIdRef.current !== auditId) return;
       if (mode === "site") {
-        setSiteReport(data as SiteAuditReport);
+        const site = data as SiteAuditReport;
+        setSiteReport(site);
+        // Persist site scans so we can revisit / scan more later
+        const id = await saveScan({ rootUrl: auditUrl, scope, report: site });
+        if (id && activeAuditIdRef.current === auditId) {
+          setCurrentScanId(id);
+          setScansRefreshKey((k) => k + 1);
+          toast.success("Scan saved", {
+            description: "Find it under Recent scans anytime.",
+          });
+        }
       } else {
         setReport(data as AuditReport);
       }
@@ -136,6 +155,14 @@ function Index() {
         auditInFlightRef.current = false;
         setLoading(false);
       }
+    }
+  }
+
+  function handleSiteReportUpdate(next: SiteAuditReport) {
+    setSiteReport(next);
+    if (currentScanId) {
+      void updateScanReport(currentScanId, next);
+      setScansRefreshKey((k) => k + 1);
     }
   }
 
