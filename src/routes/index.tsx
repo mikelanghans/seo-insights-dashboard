@@ -133,7 +133,7 @@ function Index() {
       const response = await fetch("/api/seo-audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: auditUrl }),
+        body: JSON.stringify({ url: auditUrl, auditType: scanType }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
