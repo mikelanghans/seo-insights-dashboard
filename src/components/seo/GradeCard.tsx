@@ -67,7 +67,7 @@ function IssueRow({ issue }: { issue: Issue }) {
   );
 }
 
-export function GradeCard({ grade }: { grade: OverallGrade }) {
+export function GradeCard({ grade, hideIssuesSection = false }: { grade: OverallGrade; hideIssuesSection?: boolean }) {
   const tone = toneFor(grade.score);
   const circumference = 2 * Math.PI * 46;
   const dash = (grade.score / 100) * circumference;
