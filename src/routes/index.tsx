@@ -157,7 +157,7 @@ function Index() {
               type="submit"
               onClick={() => void runAudit()}
               disabled={loading || !isValid}
-              className="h-12 w-full shrink-0 bg-[var(--gradient-hero)] px-6 text-base font-semibold text-primary-foreground shadow-[var(--shadow-elegant)] hover:opacity-95 sm:w-auto sm:min-w-[140px]"
+              className="h-12 w-full shrink-0 bg-[var(--gradient-hero)] px-6 text-base font-semibold !text-white shadow-[var(--shadow-elegant)] hover:opacity-95 disabled:opacity-50 sm:w-auto sm:min-w-[140px]"
             >
               {loading ? (
                 <>
