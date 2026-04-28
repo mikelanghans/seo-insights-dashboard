@@ -230,8 +230,12 @@ function Index() {
             </div>
             {mode === "site" && (
               <Select value={scope} onValueChange={(v) => setScope(v as SiteScope)} disabled={loading}>
-                <SelectTrigger className="h-13 w-full shrink-0 border-0 bg-muted/50 text-sm font-medium sm:w-[180px]">
-                  <SelectValue />
+                <SelectTrigger className="h-13 w-full shrink-0 border-0 bg-muted/50 text-sm font-medium sm:w-[230px]">
+                  <SelectValue placeholder="Scan depth">
+                    <span className="truncate">
+                      {SCOPE_LABELS[scope].label} scan · {SCOPE_LABELS[scope].pages} pages
+                    </span>
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {(Object.keys(SCOPE_LABELS) as SiteScope[]).map((k) => (
