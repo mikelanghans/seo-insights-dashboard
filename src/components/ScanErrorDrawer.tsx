@@ -9,7 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, RotateCw } from "lucide-react";
 import { toast } from "sonner";
-import { getScanStatus, startScan, type SavedScanSummary } from "@/lib/scans";
+import {
+  getScanStatus,
+  linkRetryScan,
+  startScan,
+  type SavedScanSummary,
+} from "@/lib/scans";
 
 interface Props {
   open: boolean;
