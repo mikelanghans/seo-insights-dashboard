@@ -52,6 +52,7 @@ function Index() {
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
+  const canAnalyze = isValid && !loading;
 
   // Simulated progress while audit runs (caps at 92% until complete)
   useEffect(() => {
@@ -166,9 +167,11 @@ function Index() {
               )}
             </div>
             <Button
-              type="submit"
-              disabled={loading || url.trim().length === 0}
-              className="h-13 w-full shrink-0 border-0 !bg-none px-6 text-base font-semibold !text-white shadow-[var(--shadow-elegant)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:min-w-[150px]"
+              type="button"
+              onClick={() => void runAudit()}
+              disabled={!canAnalyze}
+              aria-disabled={!canAnalyze}
+              className="h-13 w-full shrink-0 border-0 !bg-none px-6 text-base font-semibold !text-white shadow-[var(--shadow-elegant)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:min-w-[150px]"
               style={{ backgroundImage: "var(--gradient-hero)" }}
             >
               {loading ? (
