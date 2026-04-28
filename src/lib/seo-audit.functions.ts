@@ -1,4 +1,5 @@
 import type { JsonValue, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
+import { auditAccessibility } from "./a11y-audit";
 
 function decodeEntities(str: string): string {
   return str
