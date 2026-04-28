@@ -9,7 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, RotateCw } from "lucide-react";
 import { toast } from "sonner";
-import { getScanStatus, startScan, type SavedScanSummary } from "@/lib/scans";
+import {
+  getScanStatus,
+  linkRetryScan,
+  startScan,
+  type SavedScanSummary,
+} from "@/lib/scans";
 
 interface Props {
   open: boolean;
@@ -34,12 +39,12 @@ export function ScanErrorDrawer({
   const [notFound, setNotFound] = useState(false);
   const [retrying, setRetrying] = useState(false);
 
-  // Reset tracked scan whenever drawer opens with a new error.
+  // Reset to the original scanId whenever the drawer opens with a new error.
   useEffect(() => {
     if (open) setActiveScanId(scanId);
   }, [open, scanId]);
 
-  // Load + poll the currently tracked scan.
+  // Load + poll the currently tracked scan, following any persisted retry chain.
   useEffect(() => {
     if (!open || !activeScanId) {
       setScan(null);
@@ -49,9 +54,24 @@ export function ScanErrorDrawer({
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
+    const resolveLatest = async (id: string): Promise<SavedScanSummary | null> => {
+      // Walk retry_scan_id chain so a refreshed page sees the most recent retry.
+      const seen = new Set<string>();
+      let current = await getScanStatus(id);
+      while (current?.retryScanId && !seen.has(current.retryScanId)) {
+        seen.add(current.retryScanId);
+        const next = await getScanStatus(current.retryScanId);
+        if (!next) break;
+        current = next;
+      }
+      return current;
+    };
+
     const tick = async (initial: boolean) => {
       if (initial) setLoading(true);
-      const s = await getScanStatus(activeScanId);
+      const s = initial
+        ? await resolveLatest(activeScanId)
+        : await getScanStatus(activeScanId);
       if (cancelled) return;
       if (!s) {
         setNotFound(true);
@@ -59,6 +79,11 @@ export function ScanErrorDrawer({
       } else {
         setNotFound(false);
         setScan(s);
+        // If we walked the chain, update activeScanId so polling targets the latest row.
+        if (initial && s.id !== activeScanId) {
+          setActiveScanId(s.id);
+          return; // effect will re-run with the new id
+        }
       }
       if (initial) setLoading(false);
       if (s && (s.status === "pending" || s.status === "running")) {
@@ -80,11 +105,14 @@ export function ScanErrorDrawer({
     }
     setRetrying(true);
     const result = await startScan({ rootUrl: scan.rootUrl, scope: scan.scope });
-    setRetrying(false);
     if ("error" in result) {
+      setRetrying(false);
       toast.error(result.error);
       return;
     }
+    // Persist the retry link on the failing scan so a refresh restores the chain.
+    await linkRetryScan(scan.id, result.scanId);
+    setRetrying(false);
     toast.success("Scan re-queued");
     setActiveScanId(result.scanId);
   };
