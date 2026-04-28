@@ -218,6 +218,11 @@ export function SiteResults({
           })}
         </ul>
       </div>
+
+      {/* Scan more pages */}
+      {onReportUpdate && (
+        <ScanMorePages report={report} onReportUpdate={onReportUpdate} />
+      )}
     </div>
   );
 }
