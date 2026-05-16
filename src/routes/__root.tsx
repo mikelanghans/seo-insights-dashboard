@@ -44,6 +44,10 @@ export const Route = createRootRoute({
       { property: "og:description", content: "Run on-page SEO and accessibility audits for any URL." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "SEO Audit - Agency Edition" },
+      { name: "twitter:description", content: "Run on-page SEO and accessibility audits for any URL." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3366f9be-7077-4361-8edc-9a6735a7c794/id-preview-e8ce7f0b--90552304-f56a-4b1d-98fc-e3fd2fc99505.lovable.app-1778971783835.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3366f9be-7077-4361-8edc-9a6735a7c794/id-preview-e8ce7f0b--90552304-f56a-4b1d-98fc-e3fd2fc99505.lovable.app-1778971783835.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
