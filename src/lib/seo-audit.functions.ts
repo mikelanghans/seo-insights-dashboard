@@ -234,6 +234,7 @@ async function fetchAuditHtml(url: string): Promise<{ finalUrl: string; status: 
         break;
       }
       if (!response) throw new Error("No response");
+      assertPublicHttpUrl(current);
       const html = await response.text();
       return { finalUrl: current, status: response.status, html };
     } catch (error) {
