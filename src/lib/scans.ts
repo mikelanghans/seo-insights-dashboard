@@ -151,7 +151,23 @@ export async function loadScan(id: string): Promise<SavedScan | null> {
   };
 }
 
+export async function loadPageScan(id: string): Promise<SavedPageScan | null> {
+  const { data, error } = await supabase
+    .from("scans")
+    .select(`${SUMMARY_COLUMNS}, report`)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const summary = mapSummary(data as SummaryRow);
+  return {
+    ...summary,
+    report: (data as SummaryRow & { report: unknown }).report as AuditReport,
+  };
+}
+
 export async function deleteScan(id: string): Promise<boolean> {
   const { error } = await supabase.from("scans").delete().eq("id", id);
   return !error;
 }
+
