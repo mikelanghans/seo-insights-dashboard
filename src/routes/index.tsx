@@ -147,6 +147,7 @@ function Index() {
       if (activeAuditIdRef.current !== auditId) return;
       setReport(data as AuditReport);
       setProgress(100);
+      setScansRefreshKey((k) => k + 1);
     } catch (err) {
       if (activeAuditIdRef.current !== auditId) return;
       setError(err instanceof Error ? err.message : "Audit failed");
