@@ -104,6 +104,17 @@ function Index() {
     return () => clearInterval(interval);
   }, [loading, hasAnyResult, mode]);
 
+  // Auto-run audit when ?url= query param is present
+  const autoRanRef = useRef(false);
+  useEffect(() => {
+    if (autoRanRef.current) return;
+    if (!urlParam) return;
+    if (authLoading) return;
+    autoRanRef.current = true;
+    void runAudit(urlParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlParam, authLoading, user]);
+
   async function runAudit(rawUrl?: string) {
     const candidate = rawUrl ?? urlInputRef.current?.value ?? url;
     const auditUrl = normalizeUrl(candidate);
