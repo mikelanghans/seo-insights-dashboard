@@ -31,6 +31,12 @@ export function AppHeader() {
 
         {user ? (
           <div className="flex items-center gap-2">
+            <Link to="/">
+              <Button variant="ghost" size="sm">
+                <Home className="mr-1.5 h-3.5 w-3.5" />
+                Home
+              </Button>
+            </Link>
             <Link to="/history">
               <Button variant="ghost" size="sm">
                 <Clock className="mr-1.5 h-3.5 w-3.5" />
