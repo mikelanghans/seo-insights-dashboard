@@ -212,17 +212,30 @@ async function fetchAuditHtml(url: string): Promise<{ finalUrl: string; status: 
   let lastError = "Load failed";
   for (const target of targets) {
     try {
-      const response = await fetch(target, {
-        redirect: "follow",
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.9",
-        },
-      });
+      let current = target;
+      let response: Response | null = null;
+      for (let hop = 0; hop < 5; hop++) {
+        assertPublicHttpUrl(current);
+        response = await fetch(current, {
+          redirect: "manual",
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+          },
+        });
+        if (response.status >= 300 && response.status < 400) {
+          const location = response.headers.get("location");
+          if (!location) break;
+          current = new URL(location, current).toString();
+          continue;
+        }
+        break;
+      }
+      if (!response) throw new Error("No response");
       const html = await response.text();
-      return { finalUrl: response.url || target, status: response.status, html };
+      return { finalUrl: current, status: response.status, html };
     } catch (error) {
       lastError = error instanceof Error ? error.message : "Load failed";
     }
