@@ -105,6 +105,19 @@ export const Route = createFileRoute("/api/scan-start")({
         if (body.url.length > 2048) {
           return Response.json({ error: "URL is too long." }, { status: 400 });
         }
+        // SSRF guard: reject internal/private URLs before storing or scanning.
+        const withProto = /^https?:\/\//i.test(body.url.trim())
+          ? body.url.trim()
+          : `https://${body.url.trim()}`;
+        try {
+          assertPublicHttpUrl(withProto);
+        } catch (e) {
+          return Response.json(
+            { error: e instanceof Error ? e.message : "Invalid URL" },
+            { status: 400 },
+          );
+        }
+
         const scope: SiteScanScope =
           typeof body.scope === "string" && VALID_SCOPES.includes(body.scope as SiteScanScope)
             ? (body.scope as SiteScanScope)
@@ -115,7 +128,7 @@ export const Route = createFileRoute("/api/scan-start")({
           .from("scans")
           .insert({
             user_id: userId,
-            root_url: body.url,
+            root_url: withProto,
             scope,
             status: "pending",
             phase: "mapping",
@@ -128,8 +141,9 @@ export const Route = createFileRoute("/api/scan-start")({
           .single();
 
         if (insertError || !inserted) {
+          console.error("[scan-start] insert failed:", insertError);
           return Response.json(
-            { error: insertError?.message || "Could not create scan." },
+            { error: "Could not create scan." },
             { status: 500 },
           );
         }
