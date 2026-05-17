@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Loader2,
   ScanSearch,
@@ -9,8 +9,10 @@ import {
   Code2,
   Eye,
   ExternalLink,
+  Download,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/AppHeader";
 import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
@@ -20,6 +22,8 @@ import { GradeCard } from "@/components/seo/GradeCard";
 import { computeGrade } from "@/lib/seo-grade";
 import { loadPageScan, type SavedPageScan } from "@/lib/scans";
 import { useAuth } from "@/hooks/use-auth";
+import { exportElementToPdf, pdfFilenameForUrl } from "@/lib/pdf-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/page/$id")({
   component: PageScanPage,
