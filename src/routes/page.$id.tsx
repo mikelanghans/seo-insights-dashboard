@@ -10,6 +10,8 @@ import {
   Eye,
   ExternalLink,
   Download,
+  Printer,
+  Share2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,7 @@ import { SchemaTab } from "@/components/seo/SchemaTab";
 import { AccessibilityTab } from "@/components/seo/AccessibilityTab";
 import { GradeCard } from "@/components/seo/GradeCard";
 import { computeGrade } from "@/lib/seo-grade";
-import { loadPageScan, type SavedPageScan } from "@/lib/scans";
+import { loadPageScan, setScanPublic, type SavedPageScan } from "@/lib/scans";
 import { useAuth } from "@/hooks/use-auth";
 import { exportElementToPdf, pdfFilenameForUrl } from "@/lib/pdf-export";
 import { toast } from "sonner";
