@@ -52,6 +52,9 @@ const SCOPE_LABELS: Record<SiteScope, { label: string; pages: number; desc: stri
 
 export const Route = createFileRoute("/")({
   component: Index,
+  validateSearch: (search: Record<string, unknown>) => ({
+    url: typeof search.url === "string" ? search.url : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "SEO Audit Tool — Instant On-Page, Speed & Schema Analysis" },
@@ -70,7 +73,8 @@ function Index() {
   const activeAuditIdRef = useRef(0);
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [url, setUrl] = useState("https://");
+  const { url: urlParam } = Route.useSearch();
+  const [url, setUrl] = useState(urlParam ?? "https://");
   const [mode, setMode] = useState<ScanMode>("single");
   const [scanType, setScanType] = useState<ScanType>("seo");
   const [scope, setScope] = useState<SiteScope>("standard");
@@ -99,6 +103,17 @@ function Index() {
     }, tickRate);
     return () => clearInterval(interval);
   }, [loading, hasAnyResult, mode]);
+
+  // Auto-run audit when ?url= query param is present
+  const autoRanRef = useRef(false);
+  useEffect(() => {
+    if (autoRanRef.current) return;
+    if (!urlParam) return;
+    if (authLoading) return;
+    autoRanRef.current = true;
+    void runAudit(urlParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlParam, authLoading, user]);
 
   async function runAudit(rawUrl?: string) {
     const candidate = rawUrl ?? urlInputRef.current?.value ?? url;
