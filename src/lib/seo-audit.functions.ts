@@ -1,5 +1,6 @@
 import type { JsonValue, OnPageReport, PageSpeedReport, SchemaItem } from "./seo-types";
 import { auditAccessibility } from "./a11y-audit";
+import { assertPublicHttpUrl } from "./api-guards";
 
 function decodeEntities(str: string): string {
   return str
@@ -177,9 +178,7 @@ export async function fetchPageSpeed(url: string, strategy: "mobile" | "desktop"
 
 function normalizeAuditUrl(raw: string): string {
   const withProto = /^https?:\/\//i.test(raw.trim()) ? raw.trim() : `https://${raw.trim()}`;
-  const parsed = new URL(withProto);
-  if (!parsed.hostname.includes(".")) throw new Error("Invalid URL");
-  return parsed.toString();
+  return assertPublicHttpUrl(withProto).toString();
 }
 
 export function emptyOnPageReport(finalUrl: string): OnPageReport {
