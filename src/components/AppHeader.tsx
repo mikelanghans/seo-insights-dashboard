@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, LogOut, ScanSearch, User as UserIcon } from "lucide-react";
+import { Clock, Home, LogOut, ScanSearch, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
