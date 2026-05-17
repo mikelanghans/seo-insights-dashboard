@@ -87,14 +87,46 @@ function PageScanPage() {
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
       <AppHeader />
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to scanner
-        </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to scanner
+          </Link>
+          {scan && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Export PDF
+            </Button>
+          )}
+        </div>
 
         {loading || authLoading ? (
+          <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Loading scan…</span>
+          </div>
+        ) : notFound || !report ? (
+          <div className="rounded-xl border border-border bg-card p-12 text-center">
+            <ScanSearch className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Scan not found</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              It may have been deleted or belongs to another account.
+            </p>
+          </div>
+        ) : (
+          <section ref={reportRef} className="space-y-6">
           <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
             <Loader2 className="mr-2 h-5 w-5 animate-spin text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Loading scan…</span>
