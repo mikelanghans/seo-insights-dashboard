@@ -460,9 +460,13 @@ function ScanMorePages({
     setError(null);
     try {
       const urls = [...selected].slice(0, MAX_SELECTABLE);
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/api/seo-scan-urls", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ urls }),
       });
       const data = await res.json().catch(() => null);
