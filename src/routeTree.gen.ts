@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ScanIdRouteImport } from './routes/scan.$id'
@@ -17,6 +18,11 @@ import { Route as ApiSeoScanUrlsRouteImport } from './routes/api.seo-scan-urls'
 import { Route as ApiSeoAuditRouteImport } from './routes/api.seo-audit'
 import { Route as ApiScanStartRouteImport } from './routes/api.scan-start'
 
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -56,6 +62,7 @@ const ApiScanStartRoute = ApiScanStartRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
     | '/api/seo-scan-urls'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
     | '/api/seo-scan-urls'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
     | '/api/seo-scan-urls'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  HistoryRoute: typeof HistoryRoute
   ApiScanStartRoute: typeof ApiScanStartRoute
   ApiSeoAuditRoute: typeof ApiSeoAuditRoute
   ApiSeoScanUrlsRoute: typeof ApiSeoScanUrlsRoute
@@ -123,6 +136,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  HistoryRoute: HistoryRoute,
   ApiScanStartRoute: ApiScanStartRoute,
   ApiSeoAuditRoute: ApiSeoAuditRoute,
   ApiSeoScanUrlsRoute: ApiSeoScanUrlsRoute,
@@ -187,3 +208,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
