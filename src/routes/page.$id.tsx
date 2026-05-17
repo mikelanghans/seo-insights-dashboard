@@ -127,20 +127,6 @@ function PageScanPage() {
           </div>
         ) : (
           <section ref={reportRef} className="space-y-6">
-          <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Loading scan…</span>
-          </div>
-        ) : notFound || !report ? (
-          <div className="rounded-xl border border-border bg-card p-12 text-center">
-            <ScanSearch className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-            <h2 className="text-lg font-semibold text-foreground">Scan not found</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              It may have been deleted or belongs to another account.
-            </p>
-          </div>
-        ) : (
-          <section className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
