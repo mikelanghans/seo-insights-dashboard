@@ -46,6 +46,7 @@ function PageScanPage() {
   const [notFound, setNotFound] = useState(false);
   const [exporting, setExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState(false);
 
   async function handleExportPdf() {
     if (!reportRef.current || !scan) return;
@@ -61,6 +62,27 @@ function PageScanPage() {
       toast.error("Could not export PDF");
     } finally {
       setExporting(false);
+    }
+  }
+
+  function handlePrint() {
+    window.print();
+  }
+
+  async function handleShare() {
+    if (!scan) return;
+    setSharing(true);
+    try {
+      const ok = await setScanPublic(scan.id, true);
+      if (!ok) throw new Error("Could not enable sharing");
+      const url = `${window.location.origin}/report/${scan.id}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success("Share link copied", { description: url });
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not create share link");
+    } finally {
+      setSharing(false);
     }
   }
 
