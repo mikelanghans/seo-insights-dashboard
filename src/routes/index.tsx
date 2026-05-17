@@ -130,9 +130,13 @@ function Index() {
         return;
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch("/api/seo-audit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ url: auditUrl, auditType: scanType }),
       });
       const data = await response.json().catch(() => null);
