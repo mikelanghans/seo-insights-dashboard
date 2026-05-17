@@ -52,6 +52,9 @@ const SCOPE_LABELS: Record<SiteScope, { label: string; pages: number; desc: stri
 
 export const Route = createFileRoute("/")({
   component: Index,
+  validateSearch: (search: Record<string, unknown>) => ({
+    url: typeof search.url === "string" ? search.url : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "SEO Audit Tool — Instant On-Page, Speed & Schema Analysis" },
