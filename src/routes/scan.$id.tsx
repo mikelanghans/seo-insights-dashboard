@@ -231,7 +231,9 @@ function ScanPage() {
             </div>
           </section>
         ) : scan ? (
-          <SiteResults report={scan.report} onReportUpdate={handleReportUpdate} />
+          <div ref={reportRef}>
+            <SiteResults report={scan.report} onReportUpdate={handleReportUpdate} />
+          </div>
         ) : null}
       </main>
     </div>
