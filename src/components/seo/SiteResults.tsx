@@ -12,6 +12,7 @@ import {
 import { GradeCard } from "./GradeCard";
 import { computeSiteGrade, type IssueSeverity, type RollupIssue } from "@/lib/seo-grade";
 import type { SiteAuditReport } from "@/lib/seo-types";
+import { supabase } from "@/integrations/supabase/client";
 
 const SEV_STYLES: Record<IssueSeverity, { icon: typeof AlertCircle; className: string; label: string }> = {
   critical: { icon: AlertCircle, className: "text-destructive", label: "Critical" },
