@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { LogOut, ScanSearch, User as UserIcon } from "lucide-react";
+import { Clock, LogOut, ScanSearch, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -30,7 +30,13 @@ export function AppHeader() {
         </Link>
 
         {user ? (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Link to="/history">
+              <Button variant="ghost" size="sm">
+                <Clock className="mr-1.5 h-3.5 w-3.5" />
+                History
+              </Button>
+            </Link>
             <div className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
               <UserIcon className="h-3.5 w-3.5" />
               <span className="max-w-[180px] truncate">{user.email}</span>
