@@ -10,6 +10,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { GradeCard } from "./GradeCard";
+import { PageSpeedTab } from "./PageSpeedTab";
 import { computeSiteGrade, type IssueSeverity, type RollupIssue } from "@/lib/seo-grade";
 import type { SiteAuditReport } from "@/lib/seo-types";
 import { supabase } from "@/integrations/supabase/client";
@@ -82,6 +83,22 @@ export function SiteResults({
 
       {/* Site-wide grade card */}
       <GradeCard grade={site.overall} hideIssuesSection />
+
+      {/* Homepage Page Speed (mobile + desktop) */}
+      {report.homepageSpeed && (
+        <div className="space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Homepage Page Speed</h3>
+            <p className="text-xs text-muted-foreground">
+              Core Web Vitals from Google PageSpeed Insights — measured on the homepage.
+            </p>
+          </div>
+          <PageSpeedTab
+            mobile={report.homepageSpeed.mobile}
+            desktop={report.homepageSpeed.desktop}
+          />
+        </div>
+      )}
 
       {/* Site-wide issue rollup */}
       {site.issueRollup.length > 0 && (
