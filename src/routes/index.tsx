@@ -35,6 +35,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport } from "@/lib/seo-types";
 import { startScan } from "@/lib/scans";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -130,9 +131,13 @@ function Index() {
         return;
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch("/api/seo-audit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ url: auditUrl, auditType: scanType }),
       });
       const data = await response.json().catch(() => null);

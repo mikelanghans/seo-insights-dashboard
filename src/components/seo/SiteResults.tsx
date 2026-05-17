@@ -12,6 +12,7 @@ import {
 import { GradeCard } from "./GradeCard";
 import { computeSiteGrade, type IssueSeverity, type RollupIssue } from "@/lib/seo-grade";
 import type { SiteAuditReport } from "@/lib/seo-types";
+import { supabase } from "@/integrations/supabase/client";
 
 const SEV_STYLES: Record<IssueSeverity, { icon: typeof AlertCircle; className: string; label: string }> = {
   critical: { icon: AlertCircle, className: "text-destructive", label: "Critical" },
@@ -460,9 +461,13 @@ function ScanMorePages({
     setError(null);
     try {
       const urls = [...selected].slice(0, MAX_SELECTABLE);
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/api/seo-scan-urls", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ urls }),
       });
       const data = await res.json().catch(() => null);
