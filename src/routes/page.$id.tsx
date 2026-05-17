@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Loader2,
   ScanSearch,
@@ -9,8 +9,10 @@ import {
   Code2,
   Eye,
   ExternalLink,
+  Download,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/AppHeader";
 import { OnPageTab } from "@/components/seo/OnPageTab";
 import { PageSpeedTab } from "@/components/seo/PageSpeedTab";
@@ -20,6 +22,8 @@ import { GradeCard } from "@/components/seo/GradeCard";
 import { computeGrade } from "@/lib/seo-grade";
 import { loadPageScan, type SavedPageScan } from "@/lib/scans";
 import { useAuth } from "@/hooks/use-auth";
+import { exportElementToPdf, pdfFilenameForUrl } from "@/lib/pdf-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/page/$id")({
   component: PageScanPage,
@@ -38,6 +42,25 @@ function PageScanPage() {
   const [scan, setScan] = useState<SavedPageScan | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function handleExportPdf() {
+    if (!reportRef.current || !scan) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(
+        reportRef.current,
+        pdfFilenameForUrl(scan.rootUrl, scan.auditType === "a11y" ? "a11y" : "seo"),
+      );
+      toast.success("PDF downloaded");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not export PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -64,12 +87,30 @@ function PageScanPage() {
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
       <AppHeader />
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to scanner
-        </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to scanner
+          </Link>
+          {scan && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Export PDF
+            </Button>
+          )}
+        </div>
 
         {loading || authLoading ? (
           <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
@@ -85,7 +126,7 @@ function PageScanPage() {
             </p>
           </div>
         ) : (
-          <section className="space-y-6">
+          <section ref={reportRef} className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

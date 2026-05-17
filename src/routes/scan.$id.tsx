@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ScanSearch, ArrowLeft, AlertCircle } from "lucide-react";
+import { Loader2, ScanSearch, ArrowLeft, AlertCircle, Download } from "lucide-react";
 import { SiteResults } from "@/components/seo/SiteResults";
 import { AppHeader } from "@/components/AppHeader";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import {
   loadScan,
   getScanStatus,
@@ -13,6 +14,8 @@ import {
 } from "@/lib/scans";
 import type { SiteAuditReport } from "@/lib/seo-types";
 import { useAuth } from "@/hooks/use-auth";
+import { exportElementToPdf, pdfFilenameForUrl } from "@/lib/pdf-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/scan/$id")({
   component: ScanPage,
@@ -64,7 +67,23 @@ function ScanPage() {
   const [summary, setSummary] = useState<SavedScanSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function handleExportPdf() {
+    if (!reportRef.current || !scan) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(reportRef.current, pdfFilenameForUrl(scan.rootUrl, "site-audit"));
+      toast.success("PDF downloaded");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not export PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -134,12 +153,30 @@ function ScanPage() {
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
       <AppHeader />
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to scanner
-        </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to scanner
+          </Link>
+          {scan && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Export PDF
+            </Button>
+          )}
+        </div>
 
         {loading || authLoading ? (
           <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
@@ -194,7 +231,9 @@ function ScanPage() {
             </div>
           </section>
         ) : scan ? (
-          <SiteResults report={scan.report} onReportUpdate={handleReportUpdate} />
+          <div ref={reportRef}>
+            <SiteResults report={scan.report} onReportUpdate={handleReportUpdate} />
+          </div>
         ) : null}
       </main>
     </div>
