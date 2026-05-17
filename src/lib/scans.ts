@@ -171,3 +171,33 @@ export async function deleteScan(id: string): Promise<boolean> {
   return !error;
 }
 
+export async function setScanPublic(id: string, isPublic: boolean): Promise<boolean> {
+  const { error } = await supabase
+    .from("scans")
+    .update({ is_public: isPublic })
+    .eq("id", id);
+  if (error) console.error("Failed to update share state:", error);
+  return !error;
+}
+
+export type PublicScan =
+  | { kind: "site"; summary: SavedScanSummary; report: SiteAuditReport }
+  | { kind: "page"; summary: SavedScanSummary; report: AuditReport };
+
+export async function loadPublicScan(id: string): Promise<PublicScan | null> {
+  const { data, error } = await supabase
+    .from("scans")
+    .select(`${SUMMARY_COLUMNS}, report, is_public`)
+    .eq("id", id)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as SummaryRow & { report: unknown; is_public: boolean };
+  if (!row.is_public) return null;
+  const summary = mapSummary(row);
+  if (summary.kind === "page") {
+    return { kind: "page", summary, report: row.report as AuditReport };
+  }
+  return { kind: "site", summary, report: row.report as SiteAuditReport };
+}
+
+
