@@ -35,6 +35,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport } from "@/lib/seo-types";
 import { startScan } from "@/lib/scans";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
