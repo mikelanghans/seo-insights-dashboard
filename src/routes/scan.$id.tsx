@@ -153,12 +153,30 @@ function ScanPage() {
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
       <AppHeader />
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to scanner
-        </Link>
+        <div className="mb-6 flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to scanner
+          </Link>
+          {scan && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleExportPdf}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Export PDF
+            </Button>
+          )}
+        </div>
 
         {loading || authLoading ? (
           <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
