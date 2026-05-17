@@ -155,3 +155,16 @@
     color: var(--color-foreground);
   }
 }
+
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  body, html { background: white !important; }
+  header, nav, button, [role="tablist"] { display: none !important; }
+  [data-state="inactive"] { display: block !important; }
+  .shadow-\[var\(--shadow-card\)\], .shadow-\[var\(--shadow-elegant\)\] { box-shadow: none !important; }
+  main { padding: 0 !important; max-width: 100% !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
+.print-only { display: none; }
