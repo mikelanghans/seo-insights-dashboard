@@ -67,7 +67,23 @@ function ScanPage() {
   const [summary, setSummary] = useState<SavedScanSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const reportRef = useRef<HTMLDivElement>(null);
+
+  async function handleExportPdf() {
+    if (!reportRef.current || !scan) return;
+    setExporting(true);
+    try {
+      await exportElementToPdf(reportRef.current, pdfFilenameForUrl(scan.rootUrl, "site-audit"));
+      toast.success("PDF downloaded");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not export PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return;
