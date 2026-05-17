@@ -7,6 +7,7 @@ import {
   type ScanProgressUpdate,
 } from "@/lib/seo-site-audit.functions";
 import type { Database } from "@/integrations/supabase/types";
+import { assertPublicHttpUrl } from "@/lib/api-guards";
 
 const VALID_SCOPES: SiteScanScope[] = ["quick", "standard", "deep"];
 
