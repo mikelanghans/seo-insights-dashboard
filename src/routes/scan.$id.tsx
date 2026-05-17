@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ScanSearch, ArrowLeft, AlertCircle, Download } from "lucide-react";
+import { Loader2, ScanSearch, ArrowLeft, AlertCircle, Download, Printer, Share2 } from "lucide-react";
 import { SiteResults } from "@/components/seo/SiteResults";
 import { AppHeader } from "@/components/AppHeader";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,7 @@ import {
   loadScan,
   getScanStatus,
   updateScanReport,
+  setScanPublic,
   type SavedScan,
   type SavedScanSummary,
 } from "@/lib/scans";
