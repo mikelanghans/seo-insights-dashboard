@@ -22,6 +22,7 @@ export type Database = {
           discovered_url_count: number
           error_message: string | null
           id: string
+          is_public: boolean
           kind: string
           pages_scanned: number
           pages_total: number
@@ -42,6 +43,7 @@ export type Database = {
           discovered_url_count?: number
           error_message?: string | null
           id?: string
+          is_public?: boolean
           kind?: string
           pages_scanned?: number
           pages_total?: number
@@ -62,6 +64,7 @@ export type Database = {
           discovered_url_count?: number
           error_message?: string | null
           id?: string
+          is_public?: boolean
           kind?: string
           pages_scanned?: number
           pages_total?: number
