@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ScanSearch, ArrowLeft, AlertCircle } from "lucide-react";
+import { Loader2, ScanSearch, ArrowLeft, AlertCircle, Download } from "lucide-react";
 import { SiteResults } from "@/components/seo/SiteResults";
 import { AppHeader } from "@/components/AppHeader";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import {
   loadScan,
   getScanStatus,
@@ -13,6 +14,8 @@ import {
 } from "@/lib/scans";
 import type { SiteAuditReport } from "@/lib/seo-types";
 import { useAuth } from "@/hooks/use-auth";
+import { exportElementToPdf, pdfFilenameForUrl } from "@/lib/pdf-export";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/scan/$id")({
   component: ScanPage,
