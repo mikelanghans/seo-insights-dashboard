@@ -174,9 +174,11 @@ function ScanPage() {
 
   return (
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
-      <AppHeader />
+      <div className="no-print">
+        <AppHeader />
+      </div>
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between no-print">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -184,20 +186,40 @@ function ScanPage() {
             <ArrowLeft className="h-4 w-4" /> Back to scanner
           </Link>
           {scan && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleExportPdf}
-              disabled={exporting}
-            >
-              {exporting ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Download className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              Export PDF
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={handlePrint}>
+                <Printer className="mr-1.5 h-3.5 w-3.5" />
+                Print Report
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleShare}
+                disabled={sharing}
+              >
+                {sharing ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Share2 className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Share Report
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleExportPdf}
+                disabled={exporting}
+              >
+                {exporting ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Export PDF
+              </Button>
+            </div>
           )}
         </div>
 
