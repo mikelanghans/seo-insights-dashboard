@@ -10,6 +10,8 @@ import {
   Eye,
   ExternalLink,
   Download,
+  Printer,
+  Share2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,7 @@ import { SchemaTab } from "@/components/seo/SchemaTab";
 import { AccessibilityTab } from "@/components/seo/AccessibilityTab";
 import { GradeCard } from "@/components/seo/GradeCard";
 import { computeGrade } from "@/lib/seo-grade";
-import { loadPageScan, type SavedPageScan } from "@/lib/scans";
+import { loadPageScan, setScanPublic, type SavedPageScan } from "@/lib/scans";
 import { useAuth } from "@/hooks/use-auth";
 import { exportElementToPdf, pdfFilenameForUrl } from "@/lib/pdf-export";
 import { toast } from "sonner";
@@ -44,6 +46,7 @@ function PageScanPage() {
   const [notFound, setNotFound] = useState(false);
   const [exporting, setExporting] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState(false);
 
   async function handleExportPdf() {
     if (!reportRef.current || !scan) return;
@@ -59,6 +62,27 @@ function PageScanPage() {
       toast.error("Could not export PDF");
     } finally {
       setExporting(false);
+    }
+  }
+
+  function handlePrint() {
+    window.print();
+  }
+
+  async function handleShare() {
+    if (!scan) return;
+    setSharing(true);
+    try {
+      const ok = await setScanPublic(scan.id, true);
+      if (!ok) throw new Error("Could not enable sharing");
+      const url = `${window.location.origin}/report/${scan.id}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success("Share link copied", { description: url });
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not create share link");
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -85,9 +109,11 @@ function PageScanPage() {
 
   return (
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
-      <AppHeader />
+      <div className="no-print">
+        <AppHeader />
+      </div>
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between no-print">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -95,20 +121,40 @@ function PageScanPage() {
             <ArrowLeft className="h-4 w-4" /> Back to scanner
           </Link>
           {scan && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleExportPdf}
-              disabled={exporting}
-            >
-              {exporting ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Download className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              Export PDF
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={handlePrint}>
+                <Printer className="mr-1.5 h-3.5 w-3.5" />
+                Print Report
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleShare}
+                disabled={sharing}
+              >
+                {sharing ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Share2 className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Share Report
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleExportPdf}
+                disabled={exporting}
+              >
+                {exporting ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Export PDF
+              </Button>
+            </div>
           )}
         </div>
 

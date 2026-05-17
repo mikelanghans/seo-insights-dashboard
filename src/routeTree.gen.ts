@@ -13,6 +13,7 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ScanIdRouteImport } from './routes/scan.$id'
+import { Route as ReportIdRouteImport } from './routes/report.$id'
 import { Route as PageIdRouteImport } from './routes/page.$id'
 import { Route as ApiSeoSiteAuditRouteImport } from './routes/api.seo-site-audit'
 import { Route as ApiSeoScanUrlsRouteImport } from './routes/api.seo-scan-urls'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
 const ScanIdRoute = ScanIdRouteImport.update({
   id: '/scan/$id',
   path: '/scan/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportIdRoute = ReportIdRouteImport.update({
+  id: '/report/$id',
+  path: '/report/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PageIdRoute = PageIdRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
   '/page/$id': typeof PageIdRoute
+  '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
   '/page/$id': typeof PageIdRoute
+  '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/api/seo-scan-urls': typeof ApiSeoScanUrlsRoute
   '/api/seo-site-audit': typeof ApiSeoSiteAuditRoute
   '/page/$id': typeof PageIdRoute
+  '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/api/seo-scan-urls'
     | '/api/seo-site-audit'
     | '/page/$id'
+    | '/report/$id'
     | '/scan/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/api/seo-scan-urls'
     | '/api/seo-site-audit'
     | '/page/$id'
+    | '/report/$id'
     | '/scan/$id'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/api/seo-scan-urls'
     | '/api/seo-site-audit'
     | '/page/$id'
+    | '/report/$id'
     | '/scan/$id'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   ApiSeoScanUrlsRoute: typeof ApiSeoScanUrlsRoute
   ApiSeoSiteAuditRoute: typeof ApiSeoSiteAuditRoute
   PageIdRoute: typeof PageIdRoute
+  ReportIdRoute: typeof ReportIdRoute
   ScanIdRoute: typeof ScanIdRoute
 }
 
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/scan/$id'
       fullPath: '/scan/$id'
       preLoaderRoute: typeof ScanIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report/$id': {
+      id: '/report/$id'
+      path: '/report/$id'
+      fullPath: '/report/$id'
+      preLoaderRoute: typeof ReportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/page/$id': {
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSeoScanUrlsRoute: ApiSeoScanUrlsRoute,
   ApiSeoSiteAuditRoute: ApiSeoSiteAuditRoute,
   PageIdRoute: PageIdRoute,
+  ReportIdRoute: ReportIdRoute,
   ScanIdRoute: ScanIdRoute,
 }
 export const routeTree = rootRouteImport

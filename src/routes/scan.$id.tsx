@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ScanSearch, ArrowLeft, AlertCircle, Download } from "lucide-react";
+import { Loader2, ScanSearch, ArrowLeft, AlertCircle, Download, Printer, Share2 } from "lucide-react";
 import { SiteResults } from "@/components/seo/SiteResults";
 import { AppHeader } from "@/components/AppHeader";
 import { Progress } from "@/components/ui/progress";
@@ -9,6 +9,7 @@ import {
   loadScan,
   getScanStatus,
   updateScanReport,
+  setScanPublic,
   type SavedScan,
   type SavedScanSummary,
 } from "@/lib/scans";
@@ -70,6 +71,7 @@ function ScanPage() {
   const [exporting, setExporting] = useState(false);
   const pollTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const reportRef = useRef<HTMLDivElement>(null);
+  const [sharing, setSharing] = useState(false);
 
   async function handleExportPdf() {
     if (!reportRef.current || !scan) return;
@@ -82,6 +84,27 @@ function ScanPage() {
       toast.error("Could not export PDF");
     } finally {
       setExporting(false);
+    }
+  }
+
+  function handlePrint() {
+    window.print();
+  }
+
+  async function handleShare() {
+    if (!scan) return;
+    setSharing(true);
+    try {
+      const ok = await setScanPublic(scan.id, true);
+      if (!ok) throw new Error("Could not enable sharing");
+      const url = `${window.location.origin}/report/${scan.id}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success("Share link copied", { description: url });
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not create share link");
+    } finally {
+      setSharing(false);
     }
   }
 
@@ -151,9 +174,11 @@ function ScanPage() {
 
   return (
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
-      <AppHeader />
+      <div className="no-print">
+        <AppHeader />
+      </div>
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between no-print">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -161,20 +186,40 @@ function ScanPage() {
             <ArrowLeft className="h-4 w-4" /> Back to scanner
           </Link>
           {scan && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleExportPdf}
-              disabled={exporting}
-            >
-              {exporting ? (
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Download className="mr-1.5 h-3.5 w-3.5" />
-              )}
-              Export PDF
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={handlePrint}>
+                <Printer className="mr-1.5 h-3.5 w-3.5" />
+                Print Report
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleShare}
+                disabled={sharing}
+              >
+                {sharing ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Share2 className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Share Report
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleExportPdf}
+                disabled={exporting}
+              >
+                {exporting ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Export PDF
+              </Button>
+            </div>
           )}
         </div>
 
