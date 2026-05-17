@@ -73,7 +73,8 @@ function Index() {
   const activeAuditIdRef = useRef(0);
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [url, setUrl] = useState("https://");
+  const { url: urlParam } = Route.useSearch();
+  const [url, setUrl] = useState(urlParam ?? "https://");
   const [mode, setMode] = useState<ScanMode>("single");
   const [scanType, setScanType] = useState<ScanType>("seo");
   const [scope, setScope] = useState<SiteScope>("standard");
