@@ -97,10 +97,12 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
         {scans.map((scan) => {
           const isRunning = scan.status === "pending" || scan.status === "running";
           const isFailed = scan.status === "failed";
+          const isPage = scan.kind === "page";
           const progressPct =
             scan.pagesTotal > 0
               ? Math.round((scan.pagesScanned / scan.pagesTotal) * 100)
               : 0;
+          const toRoute = isPage ? "/page/$id" : "/scan/$id";
           return (
             <li key={scan.id} className="flex items-center gap-3 py-2.5">
               <div className="mt-0.5 shrink-0">
@@ -114,7 +116,7 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
               </div>
               <div className="min-w-0 flex-1">
                 <Link
-                  to="/scan/$id"
+                  to={toRoute}
                   params={{ id: scan.id }}
                   className="block truncate text-sm font-medium text-foreground hover:text-primary"
                 >
@@ -132,6 +134,10 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
                     <span className="text-destructive">
                       Failed{scan.errorMessage ? ` — ${scan.errorMessage}` : ""}
                     </span>
+                  ) : isPage ? (
+                    <>
+                      Single page · {scan.auditType === "a11y" ? "Accessibility" : "SEO"} · {timeAgo(scan.createdAt)}
+                    </>
                   ) : (
                     <>
                       {scan.pagesScanned} of {scan.discoveredUrlCount} pages · {scan.scope} ·{" "}
@@ -141,7 +147,7 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
                 </p>
               </div>
               <Link
-                to="/scan/$id"
+                to={toRoute}
                 params={{ id: scan.id }}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
               >

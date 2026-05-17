@@ -1,13 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { SiteAuditReport } from "./seo-types";
+import type { AuditReport, SiteAuditReport } from "./seo-types";
 
 export type ScanStatus = "pending" | "running" | "complete" | "failed";
 export type ScanPhase = "mapping" | "scanning" | "grading" | "complete" | null;
+export type ScanKind = "site" | "page";
 
 export interface SavedScanSummary {
   id: string;
   rootUrl: string;
   scope: string;
+  kind: ScanKind;
+  auditType: "seo" | "a11y" | null;
   status: ScanStatus;
   phase: ScanPhase;
   pagesScanned: number;
@@ -23,13 +26,19 @@ export interface SavedScan extends SavedScanSummary {
   report: SiteAuditReport;
 }
 
+export interface SavedPageScan extends SavedScanSummary {
+  report: AuditReport;
+}
+
 const SUMMARY_COLUMNS =
-  "id, root_url, scope, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, retry_scan_id, created_at, updated_at";
+  "id, root_url, scope, kind, audit_type, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, retry_scan_id, created_at, updated_at";
 
 type SummaryRow = {
   id: string;
   root_url: string;
   scope: string;
+  kind: string | null;
+  audit_type: string | null;
   status: string;
   phase: string | null;
   pages_scanned: number;
@@ -46,6 +55,8 @@ function mapSummary(row: SummaryRow): SavedScanSummary {
     id: row.id,
     rootUrl: row.root_url,
     scope: row.scope,
+    kind: ((row.kind as ScanKind) ?? "site"),
+    auditType: (row.audit_type as "seo" | "a11y" | null) ?? null,
     status: (row.status as ScanStatus) ?? "complete",
     phase: (row.phase as ScanPhase) ?? null,
     pagesScanned: row.pages_scanned,
@@ -140,7 +151,23 @@ export async function loadScan(id: string): Promise<SavedScan | null> {
   };
 }
 
+export async function loadPageScan(id: string): Promise<SavedPageScan | null> {
+  const { data, error } = await supabase
+    .from("scans")
+    .select(`${SUMMARY_COLUMNS}, report`)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  const summary = mapSummary(data as SummaryRow);
+  return {
+    ...summary,
+    report: (data as SummaryRow & { report: unknown }).report as AuditReport,
+  };
+}
+
 export async function deleteScan(id: string): Promise<boolean> {
   const { error } = await supabase.from("scans").delete().eq("id", id);
   return !error;
 }
+

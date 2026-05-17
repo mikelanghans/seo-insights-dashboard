@@ -16,11 +16,13 @@ export type Database = {
     Tables: {
       scans: {
         Row: {
+          audit_type: string | null
           brand_aura_user_id: string | null
           created_at: string
           discovered_url_count: number
           error_message: string | null
           id: string
+          kind: string
           pages_scanned: number
           pages_total: number
           phase: string | null
@@ -34,11 +36,13 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          audit_type?: string | null
           brand_aura_user_id?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
           id?: string
+          kind?: string
           pages_scanned?: number
           pages_total?: number
           phase?: string | null
@@ -52,11 +56,13 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          audit_type?: string | null
           brand_aura_user_id?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
           id?: string
+          kind?: string
           pages_scanned?: number
           pages_total?: number
           phase?: string | null
