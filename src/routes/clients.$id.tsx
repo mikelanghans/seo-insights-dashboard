@@ -30,6 +30,22 @@ import {
 } from "lucide-react";
 import { deleteClient, getClient, updateClient, type Client } from "@/lib/clients";
 import { listScansForClient, type SavedScanSummary } from "@/lib/scans";
+import {
+  listClientWebsites,
+  createClientWebsite,
+  updateClientWebsite,
+  deleteClientWebsite,
+  type ClientWebsite,
+} from "@/lib/client-websites";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Globe, Star } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/clients/$id")({
