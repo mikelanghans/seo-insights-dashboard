@@ -14,6 +14,7 @@ export const Route = createFileRoute("/api/seo-audit")({
           const body = (await request.json().catch(() => null)) as {
             url?: unknown;
             auditType?: unknown;
+            clientId?: unknown;
           } | null;
           if (!body || typeof body.url !== "string" || body.url.length === 0) {
             return safeError("Please enter a valid URL.", 400);
@@ -30,6 +31,23 @@ export const Route = createFileRoute("/api/seo-audit")({
           }
 
           const auditType = body.auditType === "a11y" ? "a11y" : "seo";
+
+          // Resolve & validate client ownership.
+          let clientId: string | null = null;
+          let clientName: string | null = null;
+          if (typeof body.clientId === "string" && body.clientId.length > 0) {
+            const { data: client } = await supabaseAdmin
+              .from("clients")
+              .select("id, name, user_id")
+              .eq("id", body.clientId)
+              .maybeSingle();
+            if (!client || client.user_id !== userId) {
+              return safeError("Client not found.", 400);
+            }
+            clientId = client.id;
+            clientName = client.name;
+          }
+
           const report = await runSeoAuditForUrl(withProto, auditType);
 
           // Persist the single-page scan to history.
@@ -47,6 +65,8 @@ export const Route = createFileRoute("/api/seo-audit")({
               pages_total: 1,
               discovered_url_count: 1,
               report: report as never,
+              client_id: clientId,
+              client_name: clientName,
             })
             .select("id")
             .single();

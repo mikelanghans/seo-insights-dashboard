@@ -99,6 +99,7 @@ export const Route = createFileRoute("/api/scan-start")({
         const body = (await request.json().catch(() => null)) as {
           url?: unknown;
           scope?: unknown;
+          clientId?: unknown;
         } | null;
         if (!body || typeof body.url !== "string" || body.url.trim().length === 0) {
           return Response.json({ error: "Please enter a valid URL." }, { status: 400 });
@@ -124,6 +125,22 @@ export const Route = createFileRoute("/api/scan-start")({
             ? (body.scope as SiteScanScope)
             : "standard";
 
+        // Resolve & validate client ownership.
+        let clientId: string | null = null;
+        let clientName: string | null = null;
+        if (typeof body.clientId === "string" && body.clientId.length > 0) {
+          const { data: client } = await supabaseAdmin
+            .from("clients")
+            .select("id, name, user_id")
+            .eq("id", body.clientId)
+            .maybeSingle();
+          if (!client || client.user_id !== userId) {
+            return Response.json({ error: "Client not found." }, { status: 400 });
+          }
+          clientId = client.id;
+          clientName = client.name;
+        }
+
         // Create a pending scan row immediately so the client can subscribe to progress.
         const { data: inserted, error: insertError } = await supabaseAdmin
           .from("scans")
@@ -137,6 +154,8 @@ export const Route = createFileRoute("/api/scan-start")({
             pages_total: 0,
             discovered_url_count: 0,
             report: {} as never,
+            client_id: clientId,
+            client_name: clientName,
           })
           .select("id")
           .single();
