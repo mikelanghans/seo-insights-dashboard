@@ -15,6 +15,7 @@ export const Route = createFileRoute("/api/seo-audit")({
             url?: unknown;
             auditType?: unknown;
             clientId?: unknown;
+            clientWebsiteId?: unknown;
           } | null;
           if (!body || typeof body.url !== "string" || body.url.length === 0) {
             return safeError("Please enter a valid URL.", 400);
@@ -48,6 +49,23 @@ export const Route = createFileRoute("/api/seo-audit")({
             clientName = client.name;
           }
 
+          // Resolve & validate client website ownership.
+          let clientWebsiteId: string | null = null;
+          if (typeof body.clientWebsiteId === "string" && body.clientWebsiteId.length > 0) {
+            const { data: website } = await supabaseAdmin
+              .from("client_websites")
+              .select("id, user_id, client_id")
+              .eq("id", body.clientWebsiteId)
+              .maybeSingle();
+            if (!website || website.user_id !== userId) {
+              return safeError("Website not found.", 400);
+            }
+            if (clientId && website.client_id !== clientId) {
+              return safeError("Website does not belong to selected client.", 400);
+            }
+            clientWebsiteId = website.id;
+          }
+
           const report = await runSeoAuditForUrl(withProto, auditType);
 
           // Persist the single-page scan to history.
@@ -67,6 +85,7 @@ export const Route = createFileRoute("/api/seo-audit")({
               report: report as never,
               client_id: clientId,
               client_name: clientName,
+              client_website_id: clientWebsiteId,
             })
             .select("id")
             .single();

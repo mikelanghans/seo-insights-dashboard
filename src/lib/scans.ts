@@ -80,6 +80,7 @@ export async function startScan(params: {
   rootUrl: string;
   scope: string;
   clientId?: string | null;
+  clientWebsiteId?: string | null;
 }): Promise<{ scanId: string } | { error: string }> {
   const { data: session } = await supabase.auth.getSession();
   const token = session.session?.access_token;
@@ -95,6 +96,7 @@ export async function startScan(params: {
       url: params.rootUrl,
       scope: params.scope,
       clientId: params.clientId ?? null,
+      clientWebsiteId: params.clientWebsiteId ?? null,
     }),
   });
   const data = (await res.json().catch(() => null)) as

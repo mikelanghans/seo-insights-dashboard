@@ -33,6 +33,8 @@ import { GradeCard } from "@/components/seo/GradeCard";
 import { RecentScans } from "@/components/seo/RecentScans";
 import { AppHeader } from "@/components/AppHeader";
 import { ClientSelector } from "@/components/ClientSelector";
+import { WebsiteSelector } from "@/components/WebsiteSelector";
+import type { ClientWebsite } from "@/lib/client-websites";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport } from "@/lib/seo-types";
 import { startScan } from "@/lib/scans";
@@ -85,6 +87,7 @@ function Index() {
   const [report, setReport] = useState<AuditReport | null>(null);
   const [scansRefreshKey, setScansRefreshKey] = useState(0);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [clientWebsite, setClientWebsite] = useState<ClientWebsite | null>(null);
 
   // Clear scan results when the user signs out
   useEffect(() => {
@@ -94,8 +97,19 @@ function Index() {
       setProgress(0);
       setLoading(false);
       setClientId(null);
+      setClientWebsite(null);
     }
   }, [authLoading, user]);
+
+  // Reset selected website when the client changes
+  useEffect(() => {
+    setClientWebsite(null);
+  }, [clientId]);
+
+  // When a client website is chosen, prefill the URL field
+  useEffect(() => {
+    if (clientWebsite) setUrl(clientWebsite.url);
+  }, [clientWebsite]);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
@@ -148,7 +162,12 @@ function Index() {
     try {
       if (mode === "site") {
         // Async flow: server creates a pending scan row, we redirect to its detail page where progress polls live.
-        const result = await startScan({ rootUrl: auditUrl, scope, clientId });
+        const result = await startScan({
+          rootUrl: auditUrl,
+          scope,
+          clientId,
+          clientWebsiteId: clientWebsite?.id ?? null,
+        });
         if (activeAuditIdRef.current !== auditId) return;
         if ("error" in result) throw new Error(result.error);
         toast.success("Scan started", {
@@ -166,7 +185,12 @@ function Index() {
           "Content-Type": "application/json",
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ url: auditUrl, auditType: scanType, clientId }),
+        body: JSON.stringify({
+          url: auditUrl,
+          auditType: scanType,
+          clientId,
+          clientWebsiteId: clientWebsite?.id ?? null,
+        }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
@@ -328,6 +352,14 @@ function Index() {
             )}
             {user && (
               <ClientSelector value={clientId} onChange={setClientId} disabled={loading} />
+            )}
+            {user && clientId && (
+              <WebsiteSelector
+                clientId={clientId}
+                value={clientWebsite?.id ?? null}
+                onChange={setClientWebsite}
+                disabled={loading}
+              />
             )}
             <Button
               type="submit"

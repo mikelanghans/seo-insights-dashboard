@@ -100,6 +100,7 @@ export const Route = createFileRoute("/api/scan-start")({
           url?: unknown;
           scope?: unknown;
           clientId?: unknown;
+          clientWebsiteId?: unknown;
         } | null;
         if (!body || typeof body.url !== "string" || body.url.trim().length === 0) {
           return Response.json({ error: "Please enter a valid URL." }, { status: 400 });
@@ -141,6 +142,26 @@ export const Route = createFileRoute("/api/scan-start")({
           clientName = client.name;
         }
 
+        // Resolve & validate client website ownership.
+        let clientWebsiteId: string | null = null;
+        if (typeof body.clientWebsiteId === "string" && body.clientWebsiteId.length > 0) {
+          const { data: website } = await supabaseAdmin
+            .from("client_websites")
+            .select("id, user_id, client_id")
+            .eq("id", body.clientWebsiteId)
+            .maybeSingle();
+          if (!website || website.user_id !== userId) {
+            return Response.json({ error: "Website not found." }, { status: 400 });
+          }
+          if (clientId && website.client_id !== clientId) {
+            return Response.json(
+              { error: "Website does not belong to selected client." },
+              { status: 400 },
+            );
+          }
+          clientWebsiteId = website.id;
+        }
+
         // Create a pending scan row immediately so the client can subscribe to progress.
         const { data: inserted, error: insertError } = await supabaseAdmin
           .from("scans")
@@ -156,6 +177,7 @@ export const Route = createFileRoute("/api/scan-start")({
             report: {} as never,
             client_id: clientId,
             client_name: clientName,
+            client_website_id: clientWebsiteId,
           })
           .select("id")
           .single();
