@@ -162,7 +162,12 @@ function Index() {
     try {
       if (mode === "site") {
         // Async flow: server creates a pending scan row, we redirect to its detail page where progress polls live.
-        const result = await startScan({ rootUrl: auditUrl, scope, clientId });
+        const result = await startScan({
+          rootUrl: auditUrl,
+          scope,
+          clientId,
+          clientWebsiteId: clientWebsite?.id ?? null,
+        });
         if (activeAuditIdRef.current !== auditId) return;
         if ("error" in result) throw new Error(result.error);
         toast.success("Scan started", {
@@ -180,7 +185,12 @@ function Index() {
           "Content-Type": "application/json",
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ url: auditUrl, auditType: scanType, clientId }),
+        body: JSON.stringify({
+          url: auditUrl,
+          auditType: scanType,
+          clientId,
+          clientWebsiteId: clientWebsite?.id ?? null,
+        }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
