@@ -87,6 +87,7 @@ function Index() {
   const [report, setReport] = useState<AuditReport | null>(null);
   const [scansRefreshKey, setScansRefreshKey] = useState(0);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [clientWebsite, setClientWebsite] = useState<ClientWebsite | null>(null);
 
   // Clear scan results when the user signs out
   useEffect(() => {
@@ -96,8 +97,19 @@ function Index() {
       setProgress(0);
       setLoading(false);
       setClientId(null);
+      setClientWebsite(null);
     }
   }, [authLoading, user]);
+
+  // Reset selected website when the client changes
+  useEffect(() => {
+    setClientWebsite(null);
+  }, [clientId]);
+
+  // When a client website is chosen, prefill the URL field
+  useEffect(() => {
+    if (clientWebsite) setUrl(clientWebsite.url);
+  }, [clientWebsite]);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
