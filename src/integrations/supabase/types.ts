@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_websites: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          label: string | null
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          label?: string | null
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          label?: string | null
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_websites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string
@@ -47,6 +88,7 @@ export type Database = {
           brand_aura_user_id: string | null
           client_id: string | null
           client_name: string | null
+          client_website_id: string | null
           created_at: string
           discovered_url_count: number
           error_message: string | null
@@ -70,6 +112,7 @@ export type Database = {
           brand_aura_user_id?: string | null
           client_id?: string | null
           client_name?: string | null
+          client_website_id?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
@@ -93,6 +136,7 @@ export type Database = {
           brand_aura_user_id?: string | null
           client_id?: string | null
           client_name?: string | null
+          client_website_id?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
@@ -117,6 +161,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scans_client_website_id_fkey"
+            columns: ["client_website_id"]
+            isOneToOne: false
+            referencedRelation: "client_websites"
             referencedColumns: ["id"]
           },
           {
