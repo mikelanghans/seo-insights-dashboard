@@ -86,6 +86,17 @@ function Index() {
   const [scansRefreshKey, setScansRefreshKey] = useState(0);
   const [clientId, setClientId] = useState<string | null>(null);
 
+  // Clear scan results when the user signs out
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setReport(null);
+      setError(null);
+      setProgress(0);
+      setLoading(false);
+      setClientId(null);
+    }
+  }, [authLoading, user]);
+
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
   const hasAnyResult = report !== null;
