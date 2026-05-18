@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as HistoryRouteImport } from './routes/history'
-import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ClientsIndexRouteImport } from './routes/clients.index'
 import { Route as ScanIdRouteImport } from './routes/scan.$id'
 import { Route as ReportIdRouteImport } from './routes/report.$id'
 import { Route as PageIdRouteImport } from './routes/page.$id'
@@ -27,11 +27,6 @@ const HistoryRoute = HistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClientsRoute = ClientsRouteImport.update({
-  id: '/clients',
-  path: '/clients',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -40,6 +35,11 @@ const AuthRoute = AuthRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientsIndexRoute = ClientsIndexRouteImport.update({
+  id: '/clients/',
+  path: '/clients/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScanIdRoute = ScanIdRouteImport.update({
@@ -58,9 +58,9 @@ const PageIdRoute = PageIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsIdRoute = ClientsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ClientsRoute,
+  id: '/clients/$id',
+  path: '/clients/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSeoSiteAuditRoute = ApiSeoSiteAuditRouteImport.update({
   id: '/api/seo-site-audit',
@@ -86,7 +86,6 @@ const ApiScanStartRoute = ApiScanStartRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/clients': typeof ClientsRouteWithChildren
   '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
@@ -96,11 +95,11 @@ export interface FileRoutesByFullPath {
   '/page/$id': typeof PageIdRoute
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
+  '/clients/': typeof ClientsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/clients': typeof ClientsRouteWithChildren
   '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
@@ -110,12 +109,12 @@ export interface FileRoutesByTo {
   '/page/$id': typeof PageIdRoute
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
+  '/clients': typeof ClientsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/clients': typeof ClientsRouteWithChildren
   '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
@@ -125,13 +124,13 @@ export interface FileRoutesById {
   '/page/$id': typeof PageIdRoute
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
+  '/clients/': typeof ClientsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
-    | '/clients'
     | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
@@ -141,11 +140,11 @@ export interface FileRouteTypes {
     | '/page/$id'
     | '/report/$id'
     | '/scan/$id'
+    | '/clients/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
-    | '/clients'
     | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
@@ -155,11 +154,11 @@ export interface FileRouteTypes {
     | '/page/$id'
     | '/report/$id'
     | '/scan/$id'
+    | '/clients'
   id:
     | '__root__'
     | '/'
     | '/auth'
-    | '/clients'
     | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
@@ -169,20 +168,22 @@ export interface FileRouteTypes {
     | '/page/$id'
     | '/report/$id'
     | '/scan/$id'
+    | '/clients/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  ClientsRoute: typeof ClientsRouteWithChildren
   HistoryRoute: typeof HistoryRoute
   ApiScanStartRoute: typeof ApiScanStartRoute
   ApiSeoAuditRoute: typeof ApiSeoAuditRoute
   ApiSeoScanUrlsRoute: typeof ApiSeoScanUrlsRoute
   ApiSeoSiteAuditRoute: typeof ApiSeoSiteAuditRoute
+  ClientsIdRoute: typeof ClientsIdRoute
   PageIdRoute: typeof PageIdRoute
   ReportIdRoute: typeof ReportIdRoute
   ScanIdRoute: typeof ScanIdRoute
+  ClientsIndexRoute: typeof ClientsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,13 +193,6 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clients': {
-      id: '/clients'
-      path: '/clients'
-      fullPath: '/clients'
-      preLoaderRoute: typeof ClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -213,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clients/': {
+      id: '/clients/'
+      path: '/clients'
+      fullPath: '/clients/'
+      preLoaderRoute: typeof ClientsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scan/$id': {
@@ -238,10 +239,10 @@ declare module '@tanstack/react-router' {
     }
     '/clients/$id': {
       id: '/clients/$id'
-      path: '/$id'
+      path: '/clients/$id'
       fullPath: '/clients/$id'
       preLoaderRoute: typeof ClientsIdRouteImport
-      parentRoute: typeof ClientsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/seo-site-audit': {
       id: '/api/seo-site-audit'
@@ -274,30 +275,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ClientsRouteChildren {
-  ClientsIdRoute: typeof ClientsIdRoute
-}
-
-const ClientsRouteChildren: ClientsRouteChildren = {
-  ClientsIdRoute: ClientsIdRoute,
-}
-
-const ClientsRouteWithChildren =
-  ClientsRoute._addFileChildren(ClientsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  ClientsRoute: ClientsRouteWithChildren,
   HistoryRoute: HistoryRoute,
   ApiScanStartRoute: ApiScanStartRoute,
   ApiSeoAuditRoute: ApiSeoAuditRoute,
   ApiSeoScanUrlsRoute: ApiSeoScanUrlsRoute,
   ApiSeoSiteAuditRoute: ApiSeoSiteAuditRoute,
+  ClientsIdRoute: ClientsIdRoute,
   PageIdRoute: PageIdRoute,
   ReportIdRoute: ReportIdRoute,
   ScanIdRoute: ScanIdRoute,
+  ClientsIndexRoute: ClientsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
