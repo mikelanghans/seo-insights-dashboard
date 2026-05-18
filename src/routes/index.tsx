@@ -32,6 +32,7 @@ import { AccessibilityTab } from "@/components/seo/AccessibilityTab";
 import { GradeCard } from "@/components/seo/GradeCard";
 import { RecentScans } from "@/components/seo/RecentScans";
 import { AppHeader } from "@/components/AppHeader";
+import { ClientSelector } from "@/components/ClientSelector";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport } from "@/lib/seo-types";
 import { startScan } from "@/lib/scans";
@@ -83,6 +84,7 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [scansRefreshKey, setScansRefreshKey] = useState(0);
+  const [clientId, setClientId] = useState<string | null>(null);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
