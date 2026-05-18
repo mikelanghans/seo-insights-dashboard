@@ -71,7 +71,7 @@ export async function updateClient(
   id: string,
   patch: { name?: string; notes?: string | null },
 ): Promise<boolean> {
-  const updates: Record<string, unknown> = {};
+  const updates: { name?: string; notes?: string | null } = {};
   if (typeof patch.name === "string") updates.name = patch.name.trim();
   if (patch.notes !== undefined) updates.notes = patch.notes?.trim() ? patch.notes.trim() : null;
   if (Object.keys(updates).length === 0) return true;
