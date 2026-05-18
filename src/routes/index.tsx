@@ -343,6 +343,14 @@ function Index() {
             {user && (
               <ClientSelector value={clientId} onChange={setClientId} disabled={loading} />
             )}
+            {user && clientId && (
+              <WebsiteSelector
+                clientId={clientId}
+                value={clientWebsite?.id ?? null}
+                onChange={setClientWebsite}
+                disabled={loading}
+              />
+            )}
             <Button
               type="submit"
               disabled={loading}
