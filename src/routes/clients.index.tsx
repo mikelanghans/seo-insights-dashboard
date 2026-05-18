@@ -10,7 +10,7 @@ import { computeGrade, computeSiteGrade } from "@/lib/seo-grade";
 import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
 import { ClientSelector } from "@/components/ClientSelector";
 
-export const Route = createFileRoute("/clients")({
+export const Route = createFileRoute("/clients/")({
   head: () => ({
     meta: [
       { title: "Clients — SEOAudit" },
