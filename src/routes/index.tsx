@@ -314,9 +314,11 @@ function Index() {
                   ))}
                 </SelectContent>
               </Select>
+            )}
             {user && (
               <ClientSelector value={clientId} onChange={setClientId} disabled={loading} />
             )}
+            <Button
               type="submit"
               disabled={loading}
               aria-disabled={loading}
