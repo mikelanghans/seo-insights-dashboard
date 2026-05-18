@@ -11,7 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Loader2, Globe, Gauge, Code2, ScanSearch, ExternalLink, CheckCircle2, FileText, Layers, Eye } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  Globe,
+  Gauge,
+  Code2,
+  ScanSearch,
+  ExternalLink,
+  CheckCircle2,
+  FileText,
+  Layers,
+  Eye,
+} from "lucide-react";
 
 function normalizeUrl(raw: string): string | null {
   const trimmed = raw.trim();
@@ -178,7 +190,9 @@ function Index() {
         return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const response = await fetch("/api/seo-audit", {
         method: "POST",
         headers: {
@@ -253,10 +267,12 @@ function Index() {
 
           {/* Scan-type toggle */}
           <div className="mx-auto mt-7 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
-            {([
-              { value: "seo", label: "SEO scan", icon: ScanSearch },
-              { value: "a11y", label: "Accessibility scan", icon: Eye },
-            ] as const).map((opt) => {
+            {(
+              [
+                { value: "seo", label: "SEO scan", icon: ScanSearch },
+                { value: "a11y", label: "Accessibility scan", icon: Eye },
+              ] as const
+            ).map((opt) => {
               const Icon = opt.icon;
               const active = scanType === opt.value;
               return (
@@ -281,10 +297,12 @@ function Index() {
           {/* Mode toggle (single page vs full site) — SEO only for now */}
           {scanType === "seo" && (
             <div className="mx-auto mt-3 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
-              {([
-                { value: "single", label: "Single page", icon: FileText },
-                { value: "site", label: "Full site", icon: Layers },
-              ] as const).map((opt) => {
+              {(
+                [
+                  { value: "single", label: "Single page", icon: FileText },
+                  { value: "site", label: "Full site", icon: Layers },
+                ] as const
+              ).map((opt) => {
                 const Icon = opt.icon;
                 const active = mode === opt.value;
                 return (
@@ -318,11 +336,7 @@ function Index() {
                 type="text"
                 inputMode="url"
                 autoComplete="url"
-                placeholder={
-                  mode === "site"
-                    ? "https://example.com"
-                    : "https://example.com/page"
-                }
+                placeholder={mode === "site" ? "https://example.com" : "https://example.com/page"}
                 value={url}
                 onChange={(e) => {
                   setUrl(e.target.value);
@@ -343,7 +357,11 @@ function Index() {
               )}
             </div>
             {mode === "site" && (
-              <Select value={scope} onValueChange={(v) => setScope(v as SiteScope)} disabled={loading}>
+              <Select
+                value={scope}
+                onValueChange={(v) => setScope(v as SiteScope)}
+                disabled={loading}
+              >
                 <SelectTrigger className="h-13 w-full shrink-0 border-0 bg-muted/50 text-sm font-medium sm:w-[230px]">
                   <SelectValue placeholder="Scan depth">
                     <span className="truncate">
@@ -356,16 +374,16 @@ function Index() {
                     <SelectItem key={k} value={k}>
                       <div className="flex flex-col items-start">
                         <span className="font-medium">{SCOPE_LABELS[k].label} scan</span>
-                        <span className="text-xs text-muted-foreground">{SCOPE_LABELS[k].desc}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {SCOPE_LABELS[k].desc}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
-            {user && (
-              <ClientSelector value={clientId} onChange={setClientId} disabled={loading} />
-            )}
+            {user && <ClientSelector value={clientId} onChange={setClientId} disabled={loading} />}
             {user && clientId && (
               <WebsiteSelector
                 clientId={clientId}
@@ -397,7 +415,8 @@ function Index() {
 
           {url.length > 0 && !isValid && !error && (
             <p className="mx-auto mt-3 max-w-2xl text-xs text-muted-foreground">
-              Enter a valid URL like <code className="rounded bg-muted px-1 py-0.5">example.com</code> to enable Analyze.
+              Enter a valid URL like{" "}
+              <code className="rounded bg-muted px-1 py-0.5">example.com</code> to enable Analyze.
             </p>
           )}
 
@@ -432,7 +451,11 @@ function Index() {
                   <span>
                     {mode === "site"
                       ? `${SCOPE_LABELS[scope].label} scan · usually ${
-                          scope === "quick" ? "30s–1min" : scope === "standard" ? "1–3 min" : "3–8 min"
+                          scope === "quick"
+                            ? "30s–1min"
+                            : scope === "standard"
+                              ? "1–3 min"
+                              : "3–8 min"
                         }`
                       : "This usually takes 10–30 seconds"}
                   </span>
@@ -469,7 +492,8 @@ function Index() {
 
             {report.crawlError && (
               <div className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-sm text-warning-foreground">
-                The page blocked the HTML crawl, so On-Page SEO and Schema may be limited. Page Speed still ran where available.
+                The page blocked the HTML crawl, so On-Page SEO and Schema may be limited. Page
+                Speed still ran where available.
               </div>
             )}
 
@@ -506,7 +530,10 @@ function Index() {
                     <OnPageTab data={report.onPage} />
                   </TabsContent>
                   <TabsContent value="speed" className="mt-6">
-                    <PageSpeedTab mobile={report.pageSpeed.mobile} desktop={report.pageSpeed.desktop} />
+                    <PageSpeedTab
+                      mobile={report.pageSpeed.mobile}
+                      desktop={report.pageSpeed.desktop}
+                    />
                   </TabsContent>
                   <TabsContent value="a11y" className="mt-6">
                     <AccessibilityTab report={report.accessibility} />
@@ -533,9 +560,21 @@ function Index() {
         {!report && !loading && !error && (
           <section className="grid gap-4 sm:grid-cols-3">
             {[
-              { icon: Globe, title: "On-Page SEO", desc: "Title, meta, headings, canonical, robots & alt tags" },
-              { icon: Gauge, title: "Core Web Vitals", desc: "Mobile + desktop scores from Google PageSpeed" },
-              { icon: Code2, title: "Structured Data", desc: "All JSON-LD schema types detected on the page" },
+              {
+                icon: Globe,
+                title: "On-Page SEO",
+                desc: "Title, meta, headings, canonical, robots & alt tags",
+              },
+              {
+                icon: Gauge,
+                title: "Core Web Vitals",
+                desc: "Mobile + desktop scores from Google PageSpeed",
+              },
+              {
+                icon: Code2,
+                title: "Structured Data",
+                desc: "All JSON-LD schema types detected on the page",
+              },
             ].map((f) => (
               <div
                 key={f.title}
