@@ -79,6 +79,7 @@ function mapSummary(row: SummaryRow): SavedScanSummary {
 export async function startScan(params: {
   rootUrl: string;
   scope: string;
+  clientId?: string | null;
 }): Promise<{ scanId: string } | { error: string }> {
   const { data: session } = await supabase.auth.getSession();
   const token = session.session?.access_token;
@@ -90,7 +91,11 @@ export async function startScan(params: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ url: params.rootUrl, scope: params.scope }),
+    body: JSON.stringify({
+      url: params.rootUrl,
+      scope: params.scope,
+      clientId: params.clientId ?? null,
+    }),
   });
   const data = (await res.json().catch(() => null)) as
     | { scanId?: string; error?: string }
@@ -130,6 +135,36 @@ export async function listRecentScans(limit = 10): Promise<SavedScanSummary[]> {
 
   if (error || !data) return [];
   return (data as SummaryRow[]).map(mapSummary);
+}
+
+export async function listScansForClient(clientId: string): Promise<SavedScanSummary[]> {
+  const { data, error } = await supabase
+    .from("scans")
+    .select(SUMMARY_COLUMNS)
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false });
+  if (error || !data) return [];
+  return (data as SummaryRow[]).map(mapSummary);
+}
+
+/** Load the most recent completed scan per client (with report) for the dashboard. */
+export async function listLatestScanPerClient(): Promise<Record<string, SavedScan | SavedPageScan>> {
+  const { data, error } = await supabase
+    .from("scans")
+    .select(`${SUMMARY_COLUMNS}, report`)
+    .not("client_id", "is", null)
+    .eq("status", "complete")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error || !data) return {};
+  const out: Record<string, SavedScan | SavedPageScan> = {};
+  for (const row of data as (SummaryRow & { report: unknown })[]) {
+    const clientId = row.client_id;
+    if (!clientId || out[clientId]) continue;
+    const summary = mapSummary(row);
+    out[clientId] = { ...summary, report: row.report as never };
+  }
+  return out;
 }
 
 export async function getScanStatus(id: string): Promise<SavedScanSummary | null> {
