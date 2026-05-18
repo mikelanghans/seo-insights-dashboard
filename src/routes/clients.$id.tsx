@@ -283,11 +283,133 @@ function ClientDetailPage() {
               )}
             </section>
 
-            <section className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
+            <section className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold text-foreground">
-                  Scan history{scans ? ` (${scans.length})` : ""}
+                  Websites{websites ? ` (${websites.length})` : ""}
                 </h2>
+                <Button size="sm" variant="outline" onClick={() => setSiteDialogOpen(true)}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Add website
+                </Button>
+              </div>
+              {websites === null ? (
+                <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+                </div>
+              ) : websites.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No websites yet. Add one to make scanning faster.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {websites.map((w) => (
+                    <li key={w.id} className="flex items-center gap-3 py-2.5">
+                      <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate text-sm font-medium text-foreground">
+                            {w.label || shortUrl(w.url)}
+                          </span>
+                          {w.isPrimary && (
+                            <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                              <Star className="h-2.5 w-2.5 fill-current" /> Primary
+                            </span>
+                          )}
+                        </div>
+                        {w.label && (
+                          <p className="truncate text-xs text-muted-foreground">{w.url}</p>
+                        )}
+                      </div>
+                      {!w.isPrimary && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleMakePrimary(w.id)}
+                        >
+                          Make primary
+                        </Button>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove this website?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Past scans will be kept but no longer linked to this website.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteWebsite(w.id)}>
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <Dialog open={siteDialogOpen} onOpenChange={setSiteDialogOpen}>
+              <DialogContent>
+                <form onSubmit={handleAddWebsite}>
+                  <DialogHeader>
+                    <DialogTitle>Add website</DialogTitle>
+                    <DialogDescription>
+                      Add another site for this client.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="site-url">URL</Label>
+                      <Input
+                        id="site-url"
+                        value={siteUrl}
+                        onChange={(e) => setSiteUrl(e.target.value)}
+                        placeholder="https://example.com"
+                        autoFocus
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="site-label">Label (optional)</Label>
+                      <Input
+                        id="site-label"
+                        value={siteLabel}
+                        onChange={(e) => setSiteLabel(e.target.value)}
+                        placeholder="Main site, Landing page, etc."
+                        maxLength={80}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setSiteDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={addingSite || !siteUrl.trim()}>
+                      {addingSite ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Adding…
+                        </>
+                      ) : (
+                        "Add website"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
                 <Link to="/">
                   <Button size="sm" variant="outline">
                     <Plus className="mr-1.5 h-3.5 w-3.5" /> New scan
