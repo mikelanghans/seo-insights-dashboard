@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,6 +215,19 @@ function Index() {
     e.preventDefault();
     void runAudit();
   }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--gradient-subtle)]">
+        <AppHeader />
+        <main className="mx-auto flex max-w-6xl items-center justify-center px-6 py-24 text-sm text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+        </main>
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/auth" />;
 
   return (
     <div className="min-h-screen bg-[var(--gradient-subtle)]">
