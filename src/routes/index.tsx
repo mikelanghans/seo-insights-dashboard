@@ -33,6 +33,8 @@ import { GradeCard } from "@/components/seo/GradeCard";
 import { RecentScans } from "@/components/seo/RecentScans";
 import { AppHeader } from "@/components/AppHeader";
 import { ClientSelector } from "@/components/ClientSelector";
+import { WebsiteSelector } from "@/components/WebsiteSelector";
+import type { ClientWebsite } from "@/lib/client-websites";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport } from "@/lib/seo-types";
 import { startScan } from "@/lib/scans";
