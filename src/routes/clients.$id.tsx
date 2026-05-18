@@ -78,15 +78,29 @@ function ClientDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const [client, setClient] = useState<Client | null | "missing">(null);
   const [scans, setScans] = useState<SavedScanSummary[] | null>(null);
+  const [websites, setWebsites] = useState<ClientWebsite[] | null>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [siteDialogOpen, setSiteDialogOpen] = useState(false);
+  const [siteUrl, setSiteUrl] = useState("");
+  const [siteLabel, setSiteLabel] = useState("");
+  const [addingSite, setAddingSite] = useState(false);
+
+  async function refreshWebsites() {
+    const ws = await listClientWebsites(id);
+    setWebsites(ws);
+  }
 
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const [c, s] = await Promise.all([getClient(id), listScansForClient(id)]);
+      const [c, s, w] = await Promise.all([
+        getClient(id),
+        listScansForClient(id),
+        listClientWebsites(id),
+      ]);
       if (!c) {
         setClient("missing");
         return;
@@ -95,8 +109,45 @@ function ClientDetailPage() {
       setName(c.name);
       setNotes(c.notes ?? "");
       setScans(s);
+      setWebsites(w);
     })();
   }, [user, id]);
+
+  async function handleAddWebsite(e: FormEvent) {
+    e.preventDefault();
+    if (!siteUrl.trim()) return;
+    setAddingSite(true);
+    const result = await createClientWebsite({ clientId: id, url: siteUrl, label: siteLabel });
+    setAddingSite(false);
+    if ("error" in result) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Website added");
+    setSiteDialogOpen(false);
+    setSiteUrl("");
+    setSiteLabel("");
+    await refreshWebsites();
+  }
+
+  async function handleMakePrimary(websiteId: string) {
+    const ok = await updateClientWebsite(websiteId, { isPrimary: true, clientId: id });
+    if (!ok) {
+      toast.error("Could not update website.");
+      return;
+    }
+    await refreshWebsites();
+  }
+
+  async function handleDeleteWebsite(websiteId: string) {
+    const ok = await deleteClientWebsite(websiteId);
+    if (!ok) {
+      toast.error("Could not remove website.");
+      return;
+    }
+    toast.success("Website removed");
+    await refreshWebsites();
+  }
 
   if (!authLoading && !user) return <Navigate to="/auth" />;
 
