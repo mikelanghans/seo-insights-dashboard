@@ -14,10 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scans: {
         Row: {
           audit_type: string | null
           brand_aura_user_id: string | null
+          client_id: string | null
+          client_name: string | null
           created_at: string
           discovered_url_count: number
           error_message: string | null
@@ -39,6 +68,8 @@ export type Database = {
         Insert: {
           audit_type?: string | null
           brand_aura_user_id?: string | null
+          client_id?: string | null
+          client_name?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
@@ -60,6 +91,8 @@ export type Database = {
         Update: {
           audit_type?: string | null
           brand_aura_user_id?: string | null
+          client_id?: string | null
+          client_name?: string | null
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
@@ -79,6 +112,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "scans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scans_retry_scan_id_fkey"
             columns: ["retry_scan_id"]

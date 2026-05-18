@@ -32,6 +32,7 @@ import { AccessibilityTab } from "@/components/seo/AccessibilityTab";
 import { GradeCard } from "@/components/seo/GradeCard";
 import { RecentScans } from "@/components/seo/RecentScans";
 import { AppHeader } from "@/components/AppHeader";
+import { ClientSelector } from "@/components/ClientSelector";
 import { computeGrade } from "@/lib/seo-grade";
 import type { AuditReport } from "@/lib/seo-types";
 import { startScan } from "@/lib/scans";
@@ -83,6 +84,7 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [scansRefreshKey, setScansRefreshKey] = useState(0);
+  const [clientId, setClientId] = useState<string | null>(null);
 
   const normalizedUrl = normalizeUrl(url);
   const isValid = normalizedUrl !== null;
@@ -135,7 +137,7 @@ function Index() {
     try {
       if (mode === "site") {
         // Async flow: server creates a pending scan row, we redirect to its detail page where progress polls live.
-        const result = await startScan({ rootUrl: auditUrl, scope });
+        const result = await startScan({ rootUrl: auditUrl, scope, clientId });
         if (activeAuditIdRef.current !== auditId) return;
         if ("error" in result) throw new Error(result.error);
         toast.success("Scan started", {
@@ -153,7 +155,7 @@ function Index() {
           "Content-Type": "application/json",
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ url: auditUrl, auditType: scanType }),
+        body: JSON.stringify({ url: auditUrl, auditType: scanType, clientId }),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
@@ -312,6 +314,9 @@ function Index() {
                   ))}
                 </SelectContent>
               </Select>
+            )}
+            {user && (
+              <ClientSelector value={clientId} onChange={setClientId} disabled={loading} />
             )}
             <Button
               type="submit"
