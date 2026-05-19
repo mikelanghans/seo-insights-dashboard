@@ -322,6 +322,7 @@ function CreateBatchDialog({
     setScheduleDayOfWeek(1);
     setScheduleDayOfMonth(1);
     setSelected(new Set());
+    setSearch("");
     void (async () => {
       const clients = await listClients();
       const out: ClientWithWebsites[] = [];
