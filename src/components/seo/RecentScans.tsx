@@ -51,10 +51,30 @@ function phaseLabel(phase: SavedScanSummary["phase"]): string {
 export function RecentScans({ refreshKey }: { refreshKey?: number }) {
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [range, setRange] = useState<DateRange>("all");
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+
+  const { since, until } = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (range === "today") return { since: startOfToday.toISOString(), until: null as string | null };
+    if (range === "7d") return { since: new Date(now.getTime() - 7 * 86400000).toISOString(), until: null };
+    if (range === "30d") return { since: new Date(now.getTime() - 30 * 86400000).toISOString(), until: null };
+    if (range === "90d") return { since: new Date(now.getTime() - 90 * 86400000).toISOString(), until: null };
+    if (range === "custom" && customDate) {
+      const start = new Date(customDate.getFullYear(), customDate.getMonth(), customDate.getDate());
+      const end = new Date(start.getTime() + 86400000);
+      return { since: start.toISOString(), until: end.toISOString() };
+    }
+    return { since: null as string | null, until: null as string | null };
+  }, [range, customDate]);
+
+  const isFiltered = range !== "all" && (range !== "custom" || !!customDate);
+  const limit = isFiltered ? 200 : 10;
 
   const { data: scans = null, refetch } = useQuery({
-    queryKey: ["recent-scans"],
-    queryFn: () => listRecentScans(10),
+    queryKey: ["recent-scans", range, customDate?.toISOString() ?? null],
+    queryFn: () => listRecentScans(limit, { since, until }),
     refetchInterval: (q) => {
       const data = q.state.data as SavedScanSummary[] | undefined;
       const stillRunning = data?.some((s) => s.status === "pending" || s.status === "running");
