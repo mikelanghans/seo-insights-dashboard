@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Briefcase, Loader2, Plus } from "lucide-react";
-import { listClients, type Client } from "@/lib/clients";
+import { ArrowRight, Briefcase, Loader2, Plus, Sparkles } from "lucide-react";
+import { listClients, setClientSubscribed, type Client } from "@/lib/clients";
 import { listLatestScanPerClient, type SavedScan, type SavedPageScan } from "@/lib/scans";
 import { computeGrade, computeSiteGrade } from "@/lib/seo-grade";
 import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
 import { ClientSelector } from "@/components/ClientSelector";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/clients/")({
   head: () => ({
