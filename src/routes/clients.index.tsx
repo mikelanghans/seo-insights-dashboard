@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Briefcase, Loader2, Plus } from "lucide-react";
-import { listClients, type Client } from "@/lib/clients";
+import { ArrowRight, Briefcase, Loader2, Plus, Sparkles } from "lucide-react";
+import { listClients, setClientSubscribed, type Client } from "@/lib/clients";
 import { listLatestScanPerClient, type SavedScan, type SavedPageScan } from "@/lib/scans";
 import { computeGrade, computeSiteGrade } from "@/lib/seo-grade";
 import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
 import { ClientSelector } from "@/components/ClientSelector";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/clients/")({
   head: () => ({
@@ -111,38 +113,84 @@ function ClientsPage() {
               }
               return (
                 <li key={c.id}>
-                  <Link
-                    to="/clients/$id"
-                    params={{ id: c.id }}
-                    className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition hover:border-primary/50 hover:shadow-md"
-                  >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                      <Briefcase className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-semibold text-foreground group-hover:text-primary">
-                        {c.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {scan
-                          ? `Last scan ${timeAgo(scan.createdAt)} · ${scan.rootUrl.replace(/^https?:\/\//, "")}`
-                          : "No scans yet"}
-                      </p>
-                    </div>
-                    {grade ? (
-                      <div
-                        className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border ${gradeColorClass(grade.letter)}`}
-                      >
-                        <span className="text-base font-bold leading-none">{grade.letter}</span>
-                        <span className="text-[10px] font-medium leading-none opacity-70">
-                          {grade.score}
-                        </span>
+                  <div className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition hover:border-primary/50 hover:shadow-md">
+                    <Link
+                      to="/clients/$id"
+                      params={{ id: c.id }}
+                      className="flex flex-1 items-center gap-4 min-w-0"
+                    >
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                        <Briefcase className="h-5 w-5 text-primary" />
                       </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                    <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-primary" />
-                  </Link>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-base font-semibold text-foreground group-hover:text-primary">
+                            {c.name}
+                          </p>
+                          {c.isSubscribed && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                              <Sparkles className="h-2.5 w-2.5" /> Pro
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {scan
+                            ? `Last scan ${timeAgo(scan.createdAt)} · ${scan.rootUrl.replace(/^https?:\/\//, "")}`
+                            : "No scans yet"}
+                        </p>
+                      </div>
+                      {grade ? (
+                        <div
+                          className={`flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg border ${gradeColorClass(grade.letter)}`}
+                        >
+                          <span className="text-base font-bold leading-none">{grade.letter}</span>
+                          <span className="text-[10px] font-medium leading-none opacity-70">
+                            {grade.score}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:text-primary" />
+                    </Link>
+                    <div
+                      className="flex shrink-0 flex-col items-center gap-1 border-l border-border pl-4"
+                      title="Subscribed clients can be included in scheduled batch scans"
+                    >
+                      <Switch
+                        checked={c.isSubscribed}
+                        onCheckedChange={async (v) => {
+                          // optimistic
+                          setClients((prev) =>
+                            prev
+                              ? prev.map((x) =>
+                                  x.id === c.id ? { ...x, isSubscribed: v } : x,
+                                )
+                              : prev,
+                          );
+                          const ok = await setClientSubscribed(c.id, v);
+                          if (!ok) {
+                            toast.error("Could not update subscription.");
+                            setClients((prev) =>
+                              prev
+                                ? prev.map((x) =>
+                                    x.id === c.id ? { ...x, isSubscribed: !v } : x,
+                                  )
+                                : prev,
+                            );
+                          } else {
+                            toast.success(
+                              v ? `${c.name} marked as subscribed` : `${c.name} subscription removed`,
+                            );
+                          }
+                        }}
+                        aria-label={`Toggle subscription for ${c.name}`}
+                      />
+                      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Subscribed
+                      </span>
+                    </div>
+                  </div>
                 </li>
               );
             })}

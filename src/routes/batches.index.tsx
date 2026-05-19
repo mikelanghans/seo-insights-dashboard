@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Check, Globe, Search } from "lucide-react";
+import { Check, Globe, Search, Sparkles } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -555,6 +555,7 @@ function CreateBatchDialog({
               setSelected={setSelected}
               search={search}
               setSearch={setSearch}
+              isScheduled={scheduleType !== "manual"}
             />
           )}
 
@@ -597,6 +598,7 @@ interface TileItem {
   websiteId: string;
   clientName: string;
   contactName: string | null;
+  isSubscribed: boolean;
   label: string;
   url: string;
   isPrimary: boolean;
@@ -608,12 +610,14 @@ function Step2Tiles({
   setSelected,
   search,
   setSearch,
+  isScheduled,
 }: {
   clientsData: ClientWithWebsites[] | null;
   selected: Set<string>;
   setSelected: React.Dispatch<React.SetStateAction<Set<string>>>;
   search: string;
   setSearch: (v: string) => void;
+  isScheduled: boolean;
 }) {
   const tiles: TileItem[] = useMemo(() => {
     if (!clientsData) return [];
@@ -626,6 +630,7 @@ function Step2Tiles({
           websiteId: w.id,
           clientName: c.client.name,
           contactName: c.client.contactName,
+          isSubscribed: c.client.isSubscribed,
           label: w.label || w.url.replace(/^https?:\/\//, ""),
           url: w.url,
           isPrimary: w.isPrimary,
@@ -634,6 +639,22 @@ function Step2Tiles({
     }
     return out;
   }, [clientsData]);
+
+  // When the batch is scheduled, automatically deselect any non-subscribed tiles.
+  useEffect(() => {
+    if (!isScheduled) return;
+    setSelected((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const t of tiles) {
+        if (!t.isSubscribed && next.has(t.key)) {
+          next.delete(t.key);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [isScheduled, tiles, setSelected]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -648,6 +669,8 @@ function Step2Tiles({
   }, [tiles, search]);
 
   function toggle(key: string) {
+    const tile = tiles.find((t) => t.key === key);
+    if (isScheduled && tile && !tile.isSubscribed) return; // locked
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
@@ -659,7 +682,10 @@ function Step2Tiles({
   function selectAllVisible() {
     setSelected((prev) => {
       const next = new Set(prev);
-      filtered.forEach((t) => next.add(t.key));
+      filtered.forEach((t) => {
+        if (isScheduled && !t.isSubscribed) return;
+        next.add(t.key);
+      });
       return next;
     });
   }
@@ -688,8 +714,24 @@ function Step2Tiles({
     );
   }
 
+  const lockedCount = isScheduled ? tiles.filter((t) => !t.isSubscribed).length : 0;
+
   return (
     <div className="space-y-3 py-4">
+      {isScheduled && (
+        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-foreground">
+          <Sparkles className="mt-0.5 h-3.5 w-3.5 flex-none text-primary" />
+          <div>
+            <p className="font-medium">Scheduled batches are limited to subscribed clients.</p>
+            <p className="mt-0.5 text-muted-foreground">
+              Non-subscribed clients are locked here and will be skipped on automated runs. Mark a
+              client as subscribed on the Clients page to include them.
+              {lockedCount > 0 && ` (${lockedCount} locked)`}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -717,17 +759,27 @@ function Step2Tiles({
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {filtered.map((t) => {
               const isSelected = selected.has(t.key);
+              const isLocked = isScheduled && !t.isSubscribed;
               return (
                 <button
                   key={t.key}
                   type="button"
                   onClick={() => toggle(t.key)}
                   aria-pressed={isSelected}
+                  aria-disabled={isLocked}
+                  disabled={isLocked}
+                  title={
+                    isLocked
+                      ? "This client is not subscribed and can't be added to a scheduled batch."
+                      : undefined
+                  }
                   className={
                     "group relative flex items-start gap-3 rounded-xl border p-3 text-left transition-all " +
-                    (isSelected
-                      ? "border-primary bg-primary/5 shadow-[var(--shadow-card)]"
-                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/40")
+                    (isLocked
+                      ? "cursor-not-allowed border-dashed border-border bg-muted/30 opacity-60"
+                      : isSelected
+                        ? "border-primary bg-primary/5 shadow-[var(--shadow-card)]"
+                        : "border-border bg-card hover:border-primary/40 hover:bg-accent/40")
                   }
                 >
                   <div
@@ -745,6 +797,17 @@ function Step2Tiles({
                       <p className="truncate text-sm font-semibold text-foreground">
                         {t.clientName}
                       </p>
+                      {t.isSubscribed ? (
+                        <span className="inline-flex items-center gap-0.5 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
+                          <Sparkles className="h-2 w-2" /> Pro
+                        </span>
+                      ) : (
+                        isScheduled && (
+                          <span className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium uppercase text-muted-foreground">
+                            not subscribed
+                          </span>
+                        )
+                      )}
                       {t.isPrimary && (
                         <span className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium uppercase text-muted-foreground">
                           primary

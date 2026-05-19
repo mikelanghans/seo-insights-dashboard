@@ -176,27 +176,44 @@ export async function executeBatch(
   const { data: targetsRaw, error: targetsErr } = await supabaseAdmin
     .from("batch_targets")
     .select(
-      "client_id, client_website_id, clients(name), client_websites(url)",
+      "client_id, client_website_id, clients(name, is_subscribed), client_websites(url)",
     )
     .eq("batch_id", batchId);
   if (targetsErr) return { error: targetsErr.message };
-  const targets: TargetRow[] = (targetsRaw ?? []).map((t) => {
+  const allTargets = (targetsRaw ?? []).map((t) => {
     const row = t as unknown as {
       client_id: string;
       client_website_id: string;
-      clients: { name: string } | null;
+      clients: { name: string; is_subscribed: boolean } | null;
       client_websites: { url: string } | null;
     };
     return {
       client_id: row.client_id,
       client_website_id: row.client_website_id,
       client_name: row.clients?.name ?? null,
+      is_subscribed: row.clients?.is_subscribed ?? false,
       website_url: row.client_websites?.url ?? "",
     };
   }).filter((t) => t.website_url.length > 0);
 
+  // Scheduled (automated) runs are restricted to subscribed clients only.
+  // Manual runs include all targets regardless of subscription.
+  const targets: TargetRow[] = (
+    trigger === "scheduled" ? allTargets.filter((t) => t.is_subscribed) : allTargets
+  ).map((t) => ({
+    client_id: t.client_id,
+    client_website_id: t.client_website_id,
+    client_name: t.client_name,
+    website_url: t.website_url,
+  }));
+
   if (targets.length === 0) {
-    return { error: "Batch has no targets with websites" };
+    return {
+      error:
+        trigger === "scheduled"
+          ? "Batch has no subscribed clients to scan"
+          : "Batch has no targets with websites",
+    };
   }
 
   // 3. Create batch_run
