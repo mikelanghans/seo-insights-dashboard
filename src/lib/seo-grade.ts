@@ -5,6 +5,15 @@ type PageLike = Pick<AuditReport, "onPage" | "schema">;
 
 export type IssueSeverity = "critical" | "warning" | "info";
 
+export interface IssueLocations {
+  /** e.g. "Image sources", "Missing tags". Singular/plural handled by caller. */
+  label: string;
+  /** Concrete items the user can fix. URLs, tag names, heading text, etc. */
+  items: string[];
+  /** True when the on-page audit truncated the list (e.g. captured only the first 10). */
+  truncated?: boolean;
+}
+
 export interface Issue {
   severity: IssueSeverity;
   title: string;
@@ -14,6 +23,8 @@ export interface Issue {
   groupKey?: string;
   /** Clean human label for the rollup, without per-page numbers. */
   groupTitle?: string;
+  /** Optional list of specific places the issue occurs (image URLs, missing tags, etc.). */
+  locations?: IssueLocations;
 }
 
 export interface GradeBreakdown {
