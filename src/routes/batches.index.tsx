@@ -598,6 +598,7 @@ interface TileItem {
   websiteId: string;
   clientName: string;
   contactName: string | null;
+  isSubscribed: boolean;
   label: string;
   url: string;
   isPrimary: boolean;
@@ -609,12 +610,14 @@ function Step2Tiles({
   setSelected,
   search,
   setSearch,
+  isScheduled,
 }: {
   clientsData: ClientWithWebsites[] | null;
   selected: Set<string>;
   setSelected: React.Dispatch<React.SetStateAction<Set<string>>>;
   search: string;
   setSearch: (v: string) => void;
+  isScheduled: boolean;
 }) {
   const tiles: TileItem[] = useMemo(() => {
     if (!clientsData) return [];
@@ -627,6 +630,7 @@ function Step2Tiles({
           websiteId: w.id,
           clientName: c.client.name,
           contactName: c.client.contactName,
+          isSubscribed: c.client.isSubscribed,
           label: w.label || w.url.replace(/^https?:\/\//, ""),
           url: w.url,
           isPrimary: w.isPrimary,
@@ -635,6 +639,22 @@ function Step2Tiles({
     }
     return out;
   }, [clientsData]);
+
+  // When the batch is scheduled, automatically deselect any non-subscribed tiles.
+  useEffect(() => {
+    if (!isScheduled) return;
+    setSelected((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const t of tiles) {
+        if (!t.isSubscribed && next.has(t.key)) {
+          next.delete(t.key);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [isScheduled, tiles, setSelected]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
