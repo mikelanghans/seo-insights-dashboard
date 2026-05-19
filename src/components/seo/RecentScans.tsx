@@ -91,7 +91,7 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
     setDeleting(id);
     const ok = await deleteScan(id);
     if (ok) {
-      queryClient.setQueryData<SavedScanSummary[]>(["recent-scans"], (prev) =>
+      queryClient.setQueriesData<SavedScanSummary[]>({ queryKey: ["recent-scans"] }, (prev) =>
         prev ? prev.filter((s) => s.id !== id) : prev,
       );
       toast.success("Scan deleted");
@@ -101,6 +101,60 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
     setDeleting(null);
   }
 
+  const filterBar = (
+    <div className="flex flex-wrap items-center gap-2">
+      <Select value={range} onValueChange={(v) => setRange(v as DateRange)}>
+        <SelectTrigger className="h-8 w-[150px] text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All time</SelectItem>
+          <SelectItem value="today">Today</SelectItem>
+          <SelectItem value="7d">Last 7 days</SelectItem>
+          <SelectItem value="30d">Last 30 days</SelectItem>
+          <SelectItem value="90d">Last 90 days</SelectItem>
+          <SelectItem value="custom">Specific date…</SelectItem>
+        </SelectContent>
+      </Select>
+      {range === "custom" && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn("h-8 text-xs font-normal", !customDate && "text-muted-foreground")}
+            >
+              <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+              {customDate ? format(customDate, "PPP") : "Pick a date"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="single"
+              selected={customDate}
+              onSelect={setCustomDate}
+              initialFocus
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+      )}
+      {isFiltered && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs"
+          onClick={() => {
+            setRange("all");
+            setCustomDate(undefined);
+          }}
+        >
+          <X className="mr-1 h-3 w-3" /> Clear
+        </Button>
+      )}
+    </div>
+  );
+
   if (scans === null) {
     return (
       <div className="flex items-center justify-center rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
@@ -109,15 +163,23 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
     );
   }
 
-  if (scans.length === 0) return null;
+  if (scans.length === 0 && !isFiltered) return null;
 
   return (
     <section className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <div className="mb-3 flex items-center gap-2">
-        <Clock className="h-4 w-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold text-foreground">Recent scans</h2>
-        <span className="text-xs text-muted-foreground">({scans.length})</span>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-foreground">Recent scans</h2>
+          <span className="text-xs text-muted-foreground">({scans.length})</span>
+        </div>
+        {filterBar}
       </div>
+      {scans.length === 0 && (
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          No scans match the selected date.
+        </p>
+      )}
       <ul className="divide-y divide-border">
         {scans.map((scan) => {
           const isRunning = scan.status === "pending" || scan.status === "running";
