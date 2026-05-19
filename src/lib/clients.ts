@@ -59,13 +59,15 @@ export async function createClient(input: {
   const userId = session.session?.user.id;
   if (!userId) return { error: "You must be signed in to create a client." };
   const trimmed = input.name.trim();
-  if (!trimmed) return { error: "Client name is required." };
+  if (!trimmed) return { error: "Business name is required." };
+  const trimmedContact = input.contactName?.trim() ?? "";
+  if (!trimmedContact) return { error: "Contact name is required." };
   const { data, error } = await supabase
     .from("clients")
     .insert({
       user_id: userId,
       name: trimmed,
-      contact_name: input.contactName?.trim() ? input.contactName.trim() : null,
+      contact_name: trimmedContact,
       notes: input.notes?.trim() ? input.notes.trim() : null,
     })
     .select(SELECT_COLS)

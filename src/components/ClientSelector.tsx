@@ -206,7 +206,7 @@ export function ClientSelector({
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={creating || !name.trim()}>
+                <Button type="submit" disabled={creating || !name.trim() || !contactName.trim()}>
                   {creating ? (
                     <>
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
