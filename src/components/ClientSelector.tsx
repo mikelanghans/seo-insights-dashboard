@@ -1,11 +1,18 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -20,8 +27,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { listClients, createClient, type Client } from "@/lib/clients";
 import { createClientWebsite } from "@/lib/client-websites";
-import { Briefcase, Loader2, Plus } from "lucide-react";
+import { Briefcase, Check, ChevronsUpDown, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const NEW_VALUE = "__new__";
 
@@ -64,14 +72,6 @@ export function ClientSelector({
     setCreatedClientId(null);
   }
 
-  function handleSelect(v: string) {
-    if (v === NEW_VALUE) {
-      resetDialog();
-      setOpen(true);
-      return;
-    }
-    onChange(v);
-  }
 
   async function handleCreateClient(e: FormEvent) {
     e.preventDefault();
@@ -121,34 +121,97 @@ export function ClientSelector({
     if (finalId) onChange(finalId);
   }
 
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const selected = clients?.find((c) => c.id === value) ?? null;
   const placeholderText = clients && clients.length === 0
     ? "No clients yet — create one"
     : "Select a client";
 
   return (
     <>
-      <Select
-        value={value ?? undefined}
-        onValueChange={handleSelect}
-        disabled={disabled || clients === null}
-      >
-        <SelectTrigger className="h-13 w-full shrink-0 border-0 bg-muted/50 text-sm font-medium sm:w-[240px]">
-          <Briefcase className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-          <SelectValue placeholder={clients === null ? "Loading…" : placeholderText} />
-        </SelectTrigger>
-        <SelectContent>
-          {clients?.map((c) => (
-            <SelectItem key={c.id} value={c.id}>
-              {c.name}
-            </SelectItem>
-          ))}
-          <SelectItem value={NEW_VALUE} className="text-primary">
-            <span className="inline-flex items-center gap-1.5">
-              <Plus className="h-3.5 w-3.5" /> New client…
+      <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={pickerOpen}
+            disabled={disabled || clients === null}
+            className="h-13 w-full shrink-0 justify-between border-0 bg-muted/50 text-sm font-medium sm:w-[240px]"
+          >
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <Briefcase className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate">
+                {selected
+                  ? selected.name
+                  : clients === null
+                    ? "Loading…"
+                    : placeholderText}
+              </span>
             </span>
-          </SelectItem>
-        </SelectContent>
-      </Select>
+            <ChevronsUpDown className="ml-1.5 h-3.5 w-3.5 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[260px] p-0" align="end">
+          <Command
+            filter={(itemValue, search) => {
+              if (itemValue === NEW_VALUE) return 1;
+              return itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+            }}
+          >
+            <CommandInput placeholder="Search by name…" />
+            <CommandList>
+              <CommandEmpty>No clients match.</CommandEmpty>
+              {clients && clients.length > 0 && (
+                <CommandGroup heading="Clients">
+                  {clients.map((c) => {
+                    const haystack = [c.name, c.contactName ?? ""].join(" ");
+                    return (
+                      <CommandItem
+                        key={c.id}
+                        value={haystack}
+                        onSelect={() => {
+                          onChange(c.id);
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-3.5 w-3.5",
+                            value === c.id ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">{c.name}</p>
+                          {c.contactName && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {c.contactName}
+                            </p>
+                          )}
+                        </div>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              )}
+              <CommandSeparator />
+              <CommandGroup>
+                <CommandItem
+                  value={NEW_VALUE}
+                  onSelect={() => {
+                    setPickerOpen(false);
+                    resetDialog();
+                    setOpen(true);
+                  }}
+                  className="text-primary"
+                >
+                  <Plus className="mr-2 h-3.5 w-3.5" /> New client…
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
 
       <Dialog
         open={open}
@@ -180,12 +243,13 @@ export function ClientSelector({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="client-contact">Contact name (optional)</Label>
+                  <Label htmlFor="client-contact">Contact name</Label>
                   <Input
                     id="client-contact"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="Jane Doe"
+                    required
                     maxLength={120}
                   />
                 </div>
@@ -205,7 +269,7 @@ export function ClientSelector({
                 <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={creating || !name.trim()}>
+                <Button type="submit" disabled={creating || !name.trim() || !contactName.trim()}>
                   {creating ? (
                     <>
                       <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
