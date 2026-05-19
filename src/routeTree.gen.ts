@@ -21,6 +21,8 @@ import { Route as ApiSeoSiteAuditRouteImport } from './routes/api.seo-site-audit
 import { Route as ApiSeoScanUrlsRouteImport } from './routes/api.seo-scan-urls'
 import { Route as ApiSeoAuditRouteImport } from './routes/api.seo-audit'
 import { Route as ApiScanStartRouteImport } from './routes/api.scan-start'
+import { Route as ApiBatchesRunRouteImport } from './routes/api.batches.run'
+import { Route as ApiPublicHooksBatchCronRouteImport } from './routes/api.public.hooks.batch-cron'
 
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
@@ -82,6 +84,16 @@ const ApiScanStartRoute = ApiScanStartRouteImport.update({
   path: '/api/scan-start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBatchesRunRoute = ApiBatchesRunRouteImport.update({
+  id: '/api/batches/run',
+  path: '/api/batches/run',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksBatchCronRoute = ApiPublicHooksBatchCronRouteImport.update({
+  id: '/api/public/hooks/batch-cron',
+  path: '/api/public/hooks/batch-cron',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
   '/clients/': typeof ClientsIndexRoute
+  '/api/batches/run': typeof ApiBatchesRunRoute
+  '/api/public/hooks/batch-cron': typeof ApiPublicHooksBatchCronRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +124,8 @@ export interface FileRoutesByTo {
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
   '/clients': typeof ClientsIndexRoute
+  '/api/batches/run': typeof ApiBatchesRunRoute
+  '/api/public/hooks/batch-cron': typeof ApiPublicHooksBatchCronRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +141,8 @@ export interface FileRoutesById {
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
   '/clients/': typeof ClientsIndexRoute
+  '/api/batches/run': typeof ApiBatchesRunRoute
+  '/api/public/hooks/batch-cron': typeof ApiPublicHooksBatchCronRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +159,8 @@ export interface FileRouteTypes {
     | '/report/$id'
     | '/scan/$id'
     | '/clients/'
+    | '/api/batches/run'
+    | '/api/public/hooks/batch-cron'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +175,8 @@ export interface FileRouteTypes {
     | '/report/$id'
     | '/scan/$id'
     | '/clients'
+    | '/api/batches/run'
+    | '/api/public/hooks/batch-cron'
   id:
     | '__root__'
     | '/'
@@ -169,6 +191,8 @@ export interface FileRouteTypes {
     | '/report/$id'
     | '/scan/$id'
     | '/clients/'
+    | '/api/batches/run'
+    | '/api/public/hooks/batch-cron'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +208,8 @@ export interface RootRouteChildren {
   ReportIdRoute: typeof ReportIdRoute
   ScanIdRoute: typeof ScanIdRoute
   ClientsIndexRoute: typeof ClientsIndexRoute
+  ApiBatchesRunRoute: typeof ApiBatchesRunRoute
+  ApiPublicHooksBatchCronRoute: typeof ApiPublicHooksBatchCronRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +298,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiScanStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/batches/run': {
+      id: '/api/batches/run'
+      path: '/api/batches/run'
+      fullPath: '/api/batches/run'
+      preLoaderRoute: typeof ApiBatchesRunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/batch-cron': {
+      id: '/api/public/hooks/batch-cron'
+      path: '/api/public/hooks/batch-cron'
+      fullPath: '/api/public/hooks/batch-cron'
+      preLoaderRoute: typeof ApiPublicHooksBatchCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -288,7 +328,18 @@ const rootRouteChildren: RootRouteChildren = {
   ReportIdRoute: ReportIdRoute,
   ScanIdRoute: ScanIdRoute,
   ClientsIndexRoute: ClientsIndexRoute,
+  ApiBatchesRunRoute: ApiBatchesRunRoute,
+  ApiPublicHooksBatchCronRoute: ApiPublicHooksBatchCronRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
