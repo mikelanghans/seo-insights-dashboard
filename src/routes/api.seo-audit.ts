@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { runSeoAuditForUrl } from "@/lib/seo-audit.functions";
 import { verifyUser, safeError, assertPublicHttpUrl } from "@/lib/api-guards";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { summarizePageReport } from "@/lib/scan-grade-summary";
 
 export const Route = createFileRoute("/api/seo-audit")({
   server: {
