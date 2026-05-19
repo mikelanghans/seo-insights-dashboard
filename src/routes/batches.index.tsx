@@ -307,6 +307,7 @@ function CreateBatchDialog({
 
   const [clientsData, setClientsData] = useState<ClientWithWebsites[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
