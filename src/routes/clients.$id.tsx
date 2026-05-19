@@ -96,13 +96,6 @@ function ClientDetailPage() {
   });
 
   const client: Client | null | "missing" =
-    clientQuery.isLoading || !clientQuery.isFetched && clientQuery.data === undefined
-      ? null
-      : clientQuery.data === null
-      ? "missing"
-      : clientQuery.data ?? null;
-  // Simpler: derive missing strictly from finished query with null data.
-  const clientState: Client | null | "missing" =
     clientQuery.isSuccess && clientQuery.data === null
       ? "missing"
       : clientQuery.data ?? null;
@@ -120,12 +113,12 @@ function ClientDetailPage() {
 
   // Sync form fields when client loads.
   useEffect(() => {
-    if (clientState && clientState !== "missing") {
-      setName(clientState.name);
-      setContactName(clientState.contactName ?? "");
-      setNotes(clientState.notes ?? "");
+    if (client && client !== "missing") {
+      setName(client.name);
+      setContactName(client.contactName ?? "");
+      setNotes(client.notes ?? "");
     }
-  }, [clientState]);
+  }, [client]);
 
   async function refreshWebsites() {
     await queryClient.invalidateQueries({ queryKey: ["client", id, "websites"] });
