@@ -81,6 +81,7 @@ function ClientDetailPage() {
   const [websites, setWebsites] = useState<ClientWebsite[] | null>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
+  const [contactName, setContactName] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [siteDialogOpen, setSiteDialogOpen] = useState(false);
@@ -107,6 +108,7 @@ function ClientDetailPage() {
       }
       setClient(c);
       setName(c.name);
+      setContactName(c.contactName ?? "");
       setNotes(c.notes ?? "");
       setScans(s);
       setWebsites(w);
@@ -169,14 +171,19 @@ function ClientDetailPage() {
     e.preventDefault();
     if (!client || client === "missing") return;
     setSaving(true);
-    const ok = await updateClient(client.id, { name, notes });
+    const ok = await updateClient(client.id, { name, contactName, notes });
     setSaving(false);
     if (!ok) {
       toast.error("Could not save changes.");
       return;
     }
     toast.success("Client updated");
-    setClient({ ...client, name, notes: notes.trim() ? notes : null });
+    setClient({
+      ...client,
+      name,
+      contactName: contactName.trim() ? contactName.trim() : null,
+      notes: notes.trim() ? notes : null,
+    });
     setEditing(false);
   }
 
@@ -213,8 +220,17 @@ function ClientDetailPage() {
               {editing ? (
                 <form onSubmit={handleSave} className="space-y-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">Business name</Label>
                     <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="contact">Contact name</Label>
+                    <Input
+                      id="contact"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      placeholder="Jane Doe"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="notes">Notes</Label>
@@ -247,6 +263,11 @@ function ClientDetailPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">{client.name}</h1>
+                    {client.contactName && (
+                      <p className="mt-1 text-sm font-medium text-muted-foreground">
+                        Contact: <span className="text-foreground">{client.contactName}</span>
+                      </p>
+                    )}
                     {client.notes ? (
                       <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
                         {client.notes}
