@@ -111,6 +111,39 @@ export function GradeCard({ grade, hideIssuesSection = false }: { grade: Overall
           </div>
           <p className="mt-2 text-base font-semibold text-foreground sm:text-lg">{grade.summary}</p>
 
+          {/* Severity summary chips */}
+          {(() => {
+            const counts = grade.topIssues.reduce(
+              (acc, i) => {
+                acc[i.severity] = (acc[i.severity] ?? 0) + 1;
+                return acc;
+              },
+              {} as Record<IssueSeverity, number>,
+            );
+            const order: IssueSeverity[] = ["critical", "warning", "info"];
+            const visible = order.filter((s) => (counts[s] ?? 0) > 0);
+            if (visible.length === 0) return null;
+            return (
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:justify-start">
+                {visible.map((s) => {
+                  const meta = SEVERITY_META[s];
+                  const Icon = meta.icon;
+                  const n = counts[s];
+                  return (
+                    <span
+                      key={s}
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.chipBg} ${meta.text}`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      {n} {meta.label.toLowerCase()}
+                      {n === 1 ? "" : s === "info" ? "s" : "s"}
+                    </span>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* Breakdown bars */}
           <div className="mt-5 space-y-3">
             {grade.breakdown.map((b) => {
