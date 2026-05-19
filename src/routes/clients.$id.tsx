@@ -187,12 +187,13 @@ function ClientDetailPage() {
       return;
     }
     toast.success("Client updated");
-    setClient({
+    queryClient.setQueryData<Client | null>(["client", id], {
       ...client,
       name,
       contactName: contactName.trim() ? contactName.trim() : null,
       notes: notes.trim() ? notes : null,
     });
+    void queryClient.invalidateQueries({ queryKey: ["clients"] });
     setEditing(false);
   }
 
