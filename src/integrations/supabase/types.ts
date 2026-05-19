@@ -135,6 +135,20 @@ export type Database = {
             referencedRelation: "batches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "batch_targets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batch_targets_client_website_id_fkey"
+            columns: ["client_website_id"]
+            isOneToOne: false
+            referencedRelation: "client_websites"
+            referencedColumns: ["id"]
+          },
         ]
       }
       batches: {
