@@ -395,7 +395,6 @@ function CreateBatchDialog({
     onOpenChange(false);
   }
 
-  const totalSelected = selected.size;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
