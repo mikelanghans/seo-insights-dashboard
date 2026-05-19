@@ -1,5 +1,6 @@
 import type { Issue, IssueSeverity, OverallGrade } from "@/lib/seo-grade";
-import { AlertCircle, AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronDown, Info } from "lucide-react";
+import { useState } from "react";
 
 function toneFor(score: number) {
   if (score >= 85) return { text: "text-success", bg: "bg-success", ring: "ring-success/30", soft: "bg-success/10" };
