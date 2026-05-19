@@ -10,6 +10,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runSeoSiteAudit, type ScanProgressUpdate } from "@/lib/seo-site-audit.functions";
 import { runSeoAuditForUrl } from "@/lib/seo-audit.functions";
+import { summarizeSiteReport, summarizePageReport } from "@/lib/scan-grade-summary";
 
 export type ScheduleType = "manual" | "daily" | "weekly" | "monthly";
 
