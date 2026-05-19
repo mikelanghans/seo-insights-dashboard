@@ -171,6 +171,14 @@ function PageScanPage() {
               It may have been deleted or belongs to another account.
             </p>
           </div>
+        ) : !report.onPage || scan?.status === "pending" || scan?.status === "running" ? (
+          <div className="rounded-xl border border-border bg-card p-12 text-center">
+            <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-foreground">Scan in progress</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              This scan is still running. Refresh the page in a moment to see results.
+            </p>
+          </div>
         ) : (
           <section ref={reportRef} className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
