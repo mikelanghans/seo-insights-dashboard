@@ -1,13 +1,11 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Briefcase, Loader2, Plus, Sparkles } from "lucide-react";
 import { listClients, setClientSubscribed, type Client } from "@/lib/clients";
-import { listLatestScanPerClient, type SavedScan, type SavedPageScan } from "@/lib/scans";
-import { computeGrade, computeSiteGrade } from "@/lib/seo-grade";
-import type { AuditReport, SiteAuditReport } from "@/lib/seo-types";
+import { listLatestScanPerClient, type ClientLatestScanSummary } from "@/lib/scans";
 import { ClientSelector } from "@/components/ClientSelector";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -43,20 +41,27 @@ function gradeColorClass(letter: string): string {
 
 function ClientsPage() {
   const { user, loading: authLoading } = useAuth();
-  const [clients, setClients] = useState<Client[] | null>(null);
-  const [latest, setLatest] = useState<Record<string, SavedScan | SavedPageScan>>({});
-  const [, setRefreshKey] = useState(0);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!user) return;
-    void (async () => {
-      const [c, l] = await Promise.all([listClients(), listLatestScanPerClient()]);
-      setClients(c);
-      setLatest(l);
-    })();
-  }, [user]);
+  const clientsQuery = useQuery({
+    queryKey: ["clients"],
+    queryFn: listClients,
+    enabled: !!user,
+  });
+  const latestQuery = useQuery({
+    queryKey: ["clients", "latest-scans"],
+    queryFn: listLatestScanPerClient,
+    enabled: !!user,
+  });
+
+  const clients: Client[] | null = clientsQuery.data ?? null;
+  const latest: Record<string, ClientLatestScanSummary> = latestQuery.data ?? {};
 
   if (!authLoading && !user) return <Navigate to="/auth" />;
+
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ["clients"] });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,18 +75,7 @@ function ClientsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <ClientSelector
-              value={null}
-              onChange={() => {
-                // Reload after creation
-                setRefreshKey((k) => k + 1);
-                void (async () => {
-                  const [c, l] = await Promise.all([listClients(), listLatestScanPerClient()]);
-                  setClients(c);
-                  setLatest(l);
-                })();
-              }}
-            />
+            <ClientSelector value={null} onChange={refresh} />
             <Link to="/">
               <Button>
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -101,16 +95,10 @@ function ClientsPage() {
           <ul className="grid gap-3 sm:grid-cols-2">
             {clients.map((c) => {
               const scan = latest[c.id];
-              let grade: { letter: string; score: number } | null = null;
-              if (scan) {
-                if (scan.kind === "page") {
-                  const g = computeGrade(scan.report as AuditReport);
-                  grade = { letter: g.letter, score: g.score };
-                } else {
-                  const g = computeSiteGrade(scan.report as SiteAuditReport);
-                  grade = { letter: g.overall.letter, score: g.overall.score };
-                }
-              }
+              const grade =
+                scan && scan.gradeLetter && scan.gradeScore !== null
+                  ? { letter: scan.gradeLetter, score: scan.gradeScore }
+                  : null;
               return (
                 <li key={c.id}>
                   <div className="group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-[var(--shadow-card)] transition hover:border-primary/50 hover:shadow-md">
