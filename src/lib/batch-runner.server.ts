@@ -16,7 +16,8 @@ export type ScheduleType = "manual" | "daily" | "weekly" | "monthly";
 /** Run a promise as a background task. On Cloudflare uses waitUntil; in Node falls through. */
 export async function runInBackground(promise: Promise<unknown>): Promise<void> {
   try {
-    const mod = (await import(/* @vite-ignore */ "cloudflare:workers")) as {
+    const modName = "cloudflare:workers";
+    const mod = (await import(/* @vite-ignore */ modName)) as {
       ctx: { waitUntil: (p: Promise<unknown>) => void };
     };
     mod.ctx.waitUntil(promise);
