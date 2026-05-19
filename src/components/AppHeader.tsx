@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Briefcase, Clock, Home, LogOut, ScanSearch, User as UserIcon } from "lucide-react";
+import { Briefcase, CalendarClock, Clock, Home, LogOut, ScanSearch, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -41,6 +41,12 @@ export function AppHeader() {
               <Button variant="ghost" size="sm">
                 <Briefcase className="mr-1.5 h-3.5 w-3.5" />
                 Clients
+              </Button>
+            </Link>
+            <Link to="/batches">
+              <Button variant="ghost" size="sm">
+                <CalendarClock className="mr-1.5 h-3.5 w-3.5" />
+                Batches
               </Button>
             </Link>
             <Link to="/history">
