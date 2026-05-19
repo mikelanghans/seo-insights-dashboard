@@ -8,6 +8,7 @@ import {
 } from "@/lib/seo-site-audit.functions";
 import type { Database } from "@/integrations/supabase/types";
 import { assertPublicHttpUrl } from "@/lib/api-guards";
+import { summarizeSiteReport } from "@/lib/scan-grade-summary";
 
 const VALID_SCOPES: SiteScanScope[] = ["quick", "standard", "deep"];
 
@@ -66,6 +67,7 @@ async function executeScan(params: {
     const report = await runSeoSiteAudit(params.url, params.scope, (u) => {
       void writeProgress(u);
     });
+    const summary = summarizeSiteReport(report);
 
     await supabaseAdmin
       .from("scans")
@@ -76,6 +78,8 @@ async function executeScan(params: {
         pages_total: report.pagesRequested,
         discovered_url_count: report.discoveredUrlCount,
         report: report as never,
+        grade_letter: summary.grade_letter,
+        grade_score: summary.grade_score,
       })
       .eq("id", params.scanId);
   } catch (error) {

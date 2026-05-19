@@ -289,6 +289,8 @@ export type Database = {
           created_at: string
           discovered_url_count: number
           error_message: string | null
+          grade_letter: string | null
+          grade_score: number | null
           id: string
           is_public: boolean
           kind: string
@@ -313,6 +315,8 @@ export type Database = {
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
+          grade_letter?: string | null
+          grade_score?: number | null
           id?: string
           is_public?: boolean
           kind?: string
@@ -337,6 +341,8 @@ export type Database = {
           created_at?: string
           discovered_url_count?: number
           error_message?: string | null
+          grade_letter?: string | null
+          grade_score?: number | null
           id?: string
           is_public?: boolean
           kind?: string

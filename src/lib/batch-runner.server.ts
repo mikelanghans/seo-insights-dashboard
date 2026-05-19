@@ -10,6 +10,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { runSeoSiteAudit, type ScanProgressUpdate } from "@/lib/seo-site-audit.functions";
 import { runSeoAuditForUrl } from "@/lib/seo-audit.functions";
+import { summarizeSiteReport, summarizePageReport } from "@/lib/scan-grade-summary";
 
 export type ScheduleType = "manual" | "daily" | "weekly" | "monthly";
 
@@ -106,6 +107,7 @@ async function runSingleSiteScan(scanId: string, url: string, scope: "quick" | "
     const report = await runSeoSiteAudit(url, scope, (u) => {
       void writeProgress(u);
     });
+    const summary = summarizeSiteReport(report);
     await supabaseAdmin
       .from("scans")
       .update({
@@ -115,6 +117,8 @@ async function runSingleSiteScan(scanId: string, url: string, scope: "quick" | "
         pages_total: report.pagesRequested,
         discovered_url_count: report.discoveredUrlCount,
         report: report as never,
+        grade_letter: summary.grade_letter,
+        grade_score: summary.grade_score,
       })
       .eq("id", scanId);
     return true;
@@ -131,6 +135,7 @@ async function runSingleSiteScan(scanId: string, url: string, scope: "quick" | "
 async function runSinglePageScan(scanId: string, url: string, auditType: "seo" | "a11y") {
   try {
     const report = await runSeoAuditForUrl(url, auditType);
+    const summary = summarizePageReport(report);
     await supabaseAdmin
       .from("scans")
       .update({
@@ -140,6 +145,8 @@ async function runSinglePageScan(scanId: string, url: string, auditType: "seo" |
         pages_total: 1,
         discovered_url_count: 1,
         report: report as never,
+        grade_letter: summary.grade_letter,
+        grade_score: summary.grade_score,
       })
       .eq("id", scanId);
     return true;
