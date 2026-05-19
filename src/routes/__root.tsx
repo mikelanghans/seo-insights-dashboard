@@ -78,12 +78,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
   return (
-    <GlobalErrorBoundary>
-      <AuthProvider>
-        <Outlet />
-        <Toaster />
-      </AuthProvider>
-    </GlobalErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <GlobalErrorBoundary>
+        <AuthProvider>
+          <Outlet />
+          <Toaster />
+        </AuthProvider>
+      </GlobalErrorBoundary>
+    </QueryClientProvider>
   );
 }
