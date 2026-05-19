@@ -589,4 +589,189 @@ function CreateBatchDialog({
   );
 }
 
+/* ---------------- Step 2: visual tile picker ---------------- */
+
+interface TileItem {
+  key: string;
+  clientId: string;
+  websiteId: string;
+  clientName: string;
+  contactName: string | null;
+  label: string;
+  url: string;
+  isPrimary: boolean;
+}
+
+function Step2Tiles({
+  clientsData,
+  selected,
+  setSelected,
+  search,
+  setSearch,
+}: {
+  clientsData: ClientWithWebsites[] | null;
+  selected: Set<string>;
+  setSelected: React.Dispatch<React.SetStateAction<Set<string>>>;
+  search: string;
+  setSearch: (v: string) => void;
+}) {
+  const tiles: TileItem[] = useMemo(() => {
+    if (!clientsData) return [];
+    const out: TileItem[] = [];
+    for (const c of clientsData) {
+      for (const w of c.websites) {
+        out.push({
+          key: `${c.client.id}::${w.id}`,
+          clientId: c.client.id,
+          websiteId: w.id,
+          clientName: c.client.name,
+          contactName: c.client.contactName,
+          label: w.label || w.url.replace(/^https?:\/\//, ""),
+          url: w.url,
+          isPrimary: w.isPrimary,
+        });
+      }
+    }
+    return out;
+  }, [clientsData]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return tiles;
+    return tiles.filter(
+      (t) =>
+        t.clientName.toLowerCase().includes(q) ||
+        (t.contactName ?? "").toLowerCase().includes(q) ||
+        t.label.toLowerCase().includes(q) ||
+        t.url.toLowerCase().includes(q),
+    );
+  }, [tiles, search]);
+
+  function toggle(key: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      filtered.forEach((t) => next.add(t.key));
+      return next;
+    });
+  }
+
+  function clearAllVisible() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      filtered.forEach((t) => next.delete(t.key));
+      return next;
+    });
+  }
+
+  if (clientsData === null) {
+    return (
+      <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+        Loading clients…
+      </div>
+    );
+  }
+
+  if (tiles.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+        No clients with websites yet. Add a client and at least one website first.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 py-4">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search clients or websites…"
+            className="pl-8"
+          />
+        </div>
+        <Button type="button" size="sm" variant="outline" onClick={selectAllVisible}>
+          Select all
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={clearAllVisible}>
+          Clear
+        </Button>
+      </div>
+
+      <div className="max-h-[420px] overflow-y-auto pr-1">
+        {filtered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+            No matches for "{search}".
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {filtered.map((t) => {
+              const isSelected = selected.has(t.key);
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => toggle(t.key)}
+                  aria-pressed={isSelected}
+                  className={
+                    "group relative flex items-start gap-3 rounded-xl border p-3 text-left transition-all " +
+                    (isSelected
+                      ? "border-primary bg-primary/5 shadow-[var(--shadow-card)]"
+                      : "border-border bg-card hover:border-primary/40 hover:bg-accent/40")
+                  }
+                >
+                  <div
+                    className={
+                      "mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-md border transition-colors " +
+                      (isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background")
+                    }
+                  >
+                    {isSelected && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {t.clientName}
+                      </p>
+                      {t.isPrimary && (
+                        <span className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium uppercase text-muted-foreground">
+                          primary
+                        </span>
+                      )}
+                    </div>
+                    {t.contactName && (
+                      <p className="truncate text-xs text-muted-foreground">{t.contactName}</p>
+                    )}
+                    <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                      <Globe className="h-3 w-3 flex-none" />
+                      <span className="truncate">{t.label}</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {selected.size} selected · {filtered.length} shown
+      </p>
+    </div>
+  );
+}
+
+
 void XCircle;
