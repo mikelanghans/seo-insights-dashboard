@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Trash2, ExternalLink, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Trash2, ExternalLink, Clock, CheckCircle2, AlertCircle, CalendarIcon, X } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { listRecentScans, deleteScan, type SavedScanSummary } from "@/lib/scans";
 import { toast } from "sonner";
+
+type DateRange = "all" | "today" | "7d" | "30d" | "90d" | "custom";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
