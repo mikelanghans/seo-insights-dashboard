@@ -148,24 +148,19 @@ function ClientsPage() {
                       <Switch
                         checked={c.isSubscribed}
                         onCheckedChange={async (v) => {
-                          // optimistic
-                          setClients((prev) =>
-                            prev
-                              ? prev.map((x) =>
+                          // optimistic update of the cached clients list
+                          const prev = queryClient.getQueryData<Client[]>(["clients"]);
+                          queryClient.setQueryData<Client[]>(["clients"], (curr) =>
+                            curr
+                              ? curr.map((x) =>
                                   x.id === c.id ? { ...x, isSubscribed: v } : x,
                                 )
-                              : prev,
+                              : curr,
                           );
                           const ok = await setClientSubscribed(c.id, v);
                           if (!ok) {
                             toast.error("Could not update subscription.");
-                            setClients((prev) =>
-                              prev
-                                ? prev.map((x) =>
-                                    x.id === c.id ? { ...x, isSubscribed: !v } : x,
-                                  )
-                                : prev,
-                            );
+                            queryClient.setQueryData<Client[]>(["clients"], prev);
                           } else {
                             toast.success(
                               v ? `${c.name} marked as subscribed` : `${c.name} subscription removed`,
