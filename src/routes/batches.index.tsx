@@ -316,7 +316,9 @@ function CreateBatchDialog({
   useEffect(() => {
     if (!open) return;
     setStep("config");
-    setName("");
+    const today = new Date();
+    const dateStr = `${today.getMonth() + 1}/${today.getDate()}/${String(today.getFullYear()).slice(-2)}`;
+    setName(`${dateStr} - Batch Run`);
     setScanKind("site");
     setAuditType("seo");
     setScope("standard");
