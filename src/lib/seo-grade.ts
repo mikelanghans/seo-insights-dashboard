@@ -209,17 +209,7 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
     });
   }
 
-  // Open Graph (5)
-  if (Object.keys(op.openGraph).length >= 3) {
-    s += 5;
-  } else {
-    issues.push({
-      severity: "info",
-      title: "Incomplete Open Graph tags",
-      description: "OG tags control how your page looks when shared on social media and in chats.",
-      fix: "Add og:title, og:description, og:image, and og:url meta tags in the <head>.",
-    });
-  }
+
 
   return {
     label: "On-Page SEO",
