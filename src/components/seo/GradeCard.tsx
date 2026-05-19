@@ -38,11 +38,11 @@ const SEVERITY_META: Record<
   },
 };
 
-function IssueRow({ issue }: { issue: Issue }) {
+function IssueRow({ issue, id }: { issue: Issue; id?: string }) {
   const meta = SEVERITY_META[issue.severity];
   const Icon = meta.icon;
   return (
-    <div className={`rounded-lg border ${meta.border} ${meta.bg} p-4`}>
+    <div id={id} className={`scroll-mt-24 rounded-lg border ${meta.border} ${meta.bg} p-4`}>
       <div className="flex items-start gap-3">
         <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${meta.chipBg}`}>
           <Icon className={`h-4 w-4 ${meta.text}`} />
@@ -65,6 +65,30 @@ function IssueRow({ issue }: { issue: Issue }) {
       </div>
     </div>
   );
+}
+
+function severityAnchorId(severity: IssueSeverity): string {
+  return `seo-issue-${severity}-first`;
+}
+
+function scrollToSeverity(severity: IssueSeverity) {
+  const el = document.getElementById(severityAnchorId(severity));
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  // brief highlight pulse
+  el.classList.add("ring-2", "ring-offset-2", "ring-offset-background");
+  const meta = SEVERITY_META[severity];
+  const ringClass =
+    severity === "critical"
+      ? "ring-destructive/60"
+      : severity === "warning"
+        ? "ring-warning/60"
+        : "ring-primary/60";
+  el.classList.add(ringClass);
+  void meta;
+  window.setTimeout(() => {
+    el.classList.remove("ring-2", "ring-offset-2", "ring-offset-background", ringClass);
+  }, 1600);
 }
 
 export function GradeCard({ grade, hideIssuesSection = false }: { grade: OverallGrade; hideIssuesSection?: boolean }) {
@@ -130,14 +154,17 @@ export function GradeCard({ grade, hideIssuesSection = false }: { grade: Overall
                   const Icon = meta.icon;
                   const n = counts[s];
                   return (
-                    <span
+                    <button
                       key={s}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.chipBg} ${meta.text}`}
+                      type="button"
+                      onClick={() => scrollToSeverity(s)}
+                      title={`Jump to first ${meta.label.toLowerCase()}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition hover:brightness-110 hover:ring-2 hover:ring-offset-1 hover:ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${meta.chipBg} ${meta.text}`}
                     >
                       <Icon className="h-3 w-3" />
                       {n} {meta.label.toLowerCase()}
-                      {n === 1 ? "" : s === "info" ? "s" : "s"}
-                    </span>
+                      {n === 1 ? "" : "s"}
+                    </button>
                   );
                 })}
               </div>
@@ -194,9 +221,20 @@ export function GradeCard({ grade, hideIssuesSection = false }: { grade: Overall
                 </span>
               </div>
               <div className="space-y-2.5">
-                {grade.topIssues.map((issue, i) => (
-                  <IssueRow key={`${issue.title}-${i}`} issue={issue} />
-                ))}
+                {(() => {
+                  const seen = new Set<IssueSeverity>();
+                  return grade.topIssues.map((issue, i) => {
+                    const isFirstOfSeverity = !seen.has(issue.severity);
+                    if (isFirstOfSeverity) seen.add(issue.severity);
+                    return (
+                      <IssueRow
+                        key={`${issue.title}-${i}`}
+                        issue={issue}
+                        id={isFirstOfSeverity ? severityAnchorId(issue.severity) : undefined}
+                      />
+                    );
+                  });
+                })()}
               </div>
             </>
           )}
