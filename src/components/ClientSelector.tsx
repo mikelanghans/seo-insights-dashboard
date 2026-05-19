@@ -72,14 +72,6 @@ export function ClientSelector({
     setCreatedClientId(null);
   }
 
-  function handleSelect(v: string) {
-    if (v === NEW_VALUE) {
-      resetDialog();
-      setOpen(true);
-      return;
-    }
-    onChange(v);
-  }
 
   async function handleCreateClient(e: FormEvent) {
     e.preventDefault();
