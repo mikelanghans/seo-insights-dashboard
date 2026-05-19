@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/collapsible";
 import { GradeCard } from "./GradeCard";
 import { PageSpeedTab } from "./PageSpeedTab";
-import { computeSiteGrade, type IssueSeverity, type RollupIssue } from "@/lib/seo-grade";
+import { computeSiteGrade, type IssueSeverity } from "@/lib/seo-grade";
 import type { SiteAuditReport } from "@/lib/seo-types";
 import { supabase } from "@/integrations/supabase/client";
 
