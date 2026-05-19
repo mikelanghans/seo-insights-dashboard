@@ -8,6 +8,7 @@ import {
 } from "@/lib/seo-site-audit.functions";
 import type { Database } from "@/integrations/supabase/types";
 import { assertPublicHttpUrl } from "@/lib/api-guards";
+import { summarizeSiteReport } from "@/lib/scan-grade-summary";
 
 const VALID_SCOPES: SiteScanScope[] = ["quick", "standard", "deep"];
 
