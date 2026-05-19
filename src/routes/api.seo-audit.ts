@@ -67,6 +67,7 @@ export const Route = createFileRoute("/api/seo-audit")({
           }
 
           const report = await runSeoAuditForUrl(withProto, auditType);
+          const summary = summarizePageReport(report);
 
           // Persist the single-page scan to history.
           const { data: inserted, error: insertError } = await supabaseAdmin
@@ -83,6 +84,8 @@ export const Route = createFileRoute("/api/seo-audit")({
               pages_total: 1,
               discovered_url_count: 1,
               report: report as never,
+              grade_letter: summary.grade_letter,
+              grade_score: summary.grade_score,
               client_id: clientId,
               client_name: clientName,
               client_website_id: clientWebsiteId,
