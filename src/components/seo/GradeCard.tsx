@@ -221,9 +221,20 @@ export function GradeCard({ grade, hideIssuesSection = false }: { grade: Overall
                 </span>
               </div>
               <div className="space-y-2.5">
-                {grade.topIssues.map((issue, i) => (
-                  <IssueRow key={`${issue.title}-${i}`} issue={issue} />
-                ))}
+                {(() => {
+                  const seen = new Set<IssueSeverity>();
+                  return grade.topIssues.map((issue, i) => {
+                    const isFirstOfSeverity = !seen.has(issue.severity);
+                    if (isFirstOfSeverity) seen.add(issue.severity);
+                    return (
+                      <IssueRow
+                        key={`${issue.title}-${i}`}
+                        issue={issue}
+                        id={isFirstOfSeverity ? severityAnchorId(issue.severity) : undefined}
+                      />
+                    );
+                  });
+                })()}
               </div>
             </>
           )}
