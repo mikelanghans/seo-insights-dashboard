@@ -5,6 +5,7 @@ export interface Client {
   name: string;
   contactName: string | null;
   notes: string | null;
+  isSubscribed: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -14,6 +15,7 @@ type ClientRow = {
   name: string;
   contact_name: string | null;
   notes: string | null;
+  is_subscribed: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -24,12 +26,21 @@ function mapClient(row: ClientRow): Client {
     name: row.name,
     contactName: row.contact_name,
     notes: row.notes,
+    isSubscribed: row.is_subscribed,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-const SELECT_COLS = "id, name, contact_name, notes, created_at, updated_at";
+const SELECT_COLS = "id, name, contact_name, notes, is_subscribed, created_at, updated_at";
+
+export async function setClientSubscribed(id: string, isSubscribed: boolean): Promise<boolean> {
+  const { error } = await supabase
+    .from("clients")
+    .update({ is_subscribed: isSubscribed })
+    .eq("id", id);
+  return !error;
+}
 
 export async function listClients(): Promise<Client[]> {
   const { data, error } = await supabase
