@@ -154,14 +154,17 @@ export function GradeCard({ grade, hideIssuesSection = false }: { grade: Overall
                   const Icon = meta.icon;
                   const n = counts[s];
                   return (
-                    <span
+                    <button
                       key={s}
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${meta.chipBg} ${meta.text}`}
+                      type="button"
+                      onClick={() => scrollToSeverity(s)}
+                      title={`Jump to first ${meta.label.toLowerCase()}`}
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition hover:brightness-110 hover:ring-2 hover:ring-offset-1 hover:ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${meta.chipBg} ${meta.text}`}
                     >
                       <Icon className="h-3 w-3" />
                       {n} {meta.label.toLowerCase()}
-                      {n === 1 ? "" : s === "info" ? "s" : "s"}
-                    </span>
+                      {n === 1 ? "" : "s"}
+                    </button>
                   );
                 })}
               </div>
