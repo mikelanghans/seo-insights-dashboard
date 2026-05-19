@@ -180,12 +180,13 @@ export function ClientSelector({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="client-contact">Contact name (optional)</Label>
+                  <Label htmlFor="client-contact">Contact name</Label>
                   <Input
                     id="client-contact"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder="Jane Doe"
+                    required
                     maxLength={120}
                   />
                 </div>
