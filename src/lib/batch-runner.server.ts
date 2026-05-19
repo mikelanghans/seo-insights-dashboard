@@ -107,6 +107,7 @@ async function runSingleSiteScan(scanId: string, url: string, scope: "quick" | "
     const report = await runSeoSiteAudit(url, scope, (u) => {
       void writeProgress(u);
     });
+    const summary = summarizeSiteReport(report);
     await supabaseAdmin
       .from("scans")
       .update({
@@ -116,6 +117,8 @@ async function runSingleSiteScan(scanId: string, url: string, scope: "quick" | "
         pages_total: report.pagesRequested,
         discovered_url_count: report.discoveredUrlCount,
         report: report as never,
+        grade_letter: summary.grade_letter,
+        grade_score: summary.grade_score,
       })
       .eq("id", scanId);
     return true;
