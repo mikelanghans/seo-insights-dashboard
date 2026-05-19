@@ -13,6 +13,7 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientsIndexRouteImport } from './routes/clients.index'
+import { Route as BatchesIndexRouteImport } from './routes/batches.index'
 import { Route as ScanIdRouteImport } from './routes/scan.$id'
 import { Route as ReportIdRouteImport } from './routes/report.$id'
 import { Route as PageIdRouteImport } from './routes/page.$id'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const ClientsIndexRoute = ClientsIndexRouteImport.update({
   id: '/clients/',
   path: '/clients/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BatchesIndexRoute = BatchesIndexRouteImport.update({
+  id: '/batches/',
+  path: '/batches/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScanIdRoute = ScanIdRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/page/$id': typeof PageIdRoute
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
+  '/batches/': typeof BatchesIndexRoute
   '/clients/': typeof ClientsIndexRoute
   '/api/batches/run': typeof ApiBatchesRunRoute
   '/api/public/hooks/batch-cron': typeof ApiPublicHooksBatchCronRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/page/$id': typeof PageIdRoute
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
+  '/batches': typeof BatchesIndexRoute
   '/clients': typeof ClientsIndexRoute
   '/api/batches/run': typeof ApiBatchesRunRoute
   '/api/public/hooks/batch-cron': typeof ApiPublicHooksBatchCronRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/page/$id': typeof PageIdRoute
   '/report/$id': typeof ReportIdRoute
   '/scan/$id': typeof ScanIdRoute
+  '/batches/': typeof BatchesIndexRoute
   '/clients/': typeof ClientsIndexRoute
   '/api/batches/run': typeof ApiBatchesRunRoute
   '/api/public/hooks/batch-cron': typeof ApiPublicHooksBatchCronRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/page/$id'
     | '/report/$id'
     | '/scan/$id'
+    | '/batches/'
     | '/clients/'
     | '/api/batches/run'
     | '/api/public/hooks/batch-cron'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/page/$id'
     | '/report/$id'
     | '/scan/$id'
+    | '/batches'
     | '/clients'
     | '/api/batches/run'
     | '/api/public/hooks/batch-cron'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/page/$id'
     | '/report/$id'
     | '/scan/$id'
+    | '/batches/'
     | '/clients/'
     | '/api/batches/run'
     | '/api/public/hooks/batch-cron'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   PageIdRoute: typeof PageIdRoute
   ReportIdRoute: typeof ReportIdRoute
   ScanIdRoute: typeof ScanIdRoute
+  BatchesIndexRoute: typeof BatchesIndexRoute
   ClientsIndexRoute: typeof ClientsIndexRoute
   ApiBatchesRunRoute: typeof ApiBatchesRunRoute
   ApiPublicHooksBatchCronRoute: typeof ApiPublicHooksBatchCronRoute
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/clients'
       fullPath: '/clients/'
       preLoaderRoute: typeof ClientsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/batches/': {
+      id: '/batches/'
+      path: '/batches'
+      fullPath: '/batches/'
+      preLoaderRoute: typeof BatchesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scan/$id': {
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   PageIdRoute: PageIdRoute,
   ReportIdRoute: ReportIdRoute,
   ScanIdRoute: ScanIdRoute,
+  BatchesIndexRoute: BatchesIndexRoute,
   ClientsIndexRoute: ClientsIndexRoute,
   ApiBatchesRunRoute: ApiBatchesRunRoute,
   ApiPublicHooksBatchCronRoute: ApiPublicHooksBatchCronRoute,
@@ -334,3 +355,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
