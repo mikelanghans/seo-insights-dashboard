@@ -30,13 +30,12 @@ import {
   Pencil,
 } from "lucide-react";
 import { deleteClient, getClient, updateClient, type Client } from "@/lib/clients";
-import { listScansForClient, type SavedScanSummary } from "@/lib/scans";
+import { listScansForClient } from "@/lib/scans";
 import {
   listClientWebsites,
   createClientWebsite,
   updateClientWebsite,
   deleteClientWebsite,
-  type ClientWebsite,
 } from "@/lib/client-websites";
 import {
   Dialog,
