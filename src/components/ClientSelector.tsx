@@ -38,6 +38,7 @@ export function ClientSelector({
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"client" | "website">("client");
   const [name, setName] = useState("");
+  const [contactName, setContactName] = useState("");
   const [notes, setNotes] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [websiteLabel, setWebsiteLabel] = useState("");
@@ -56,6 +57,7 @@ export function ClientSelector({
   function resetDialog() {
     setStep("client");
     setName("");
+    setContactName("");
     setNotes("");
     setWebsiteUrl("");
     setWebsiteLabel("");
@@ -76,7 +78,7 @@ export function ClientSelector({
     const trimmed = name.trim();
     if (!trimmed) return;
     setCreating(true);
-    const result = await createClient({ name: trimmed, notes });
+    const result = await createClient({ name: trimmed, contactName, notes });
     setCreating(false);
     if ("error" in result) {
       toast.error(result.error);
@@ -166,7 +168,7 @@ export function ClientSelector({
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="client-name">Name</Label>
+                  <Label htmlFor="client-name">Business name</Label>
                   <Input
                     id="client-name"
                     value={name}
@@ -174,6 +176,16 @@ export function ClientSelector({
                     placeholder="Acme Corp"
                     autoFocus
                     required
+                    maxLength={120}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="client-contact">Contact name (optional)</Label>
+                  <Input
+                    id="client-contact"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Jane Doe"
                     maxLength={120}
                   />
                 </div>
