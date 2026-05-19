@@ -38,11 +38,11 @@ const SEVERITY_META: Record<
   },
 };
 
-function IssueRow({ issue }: { issue: Issue }) {
+function IssueRow({ issue, id }: { issue: Issue; id?: string }) {
   const meta = SEVERITY_META[issue.severity];
   const Icon = meta.icon;
   return (
-    <div className={`rounded-lg border ${meta.border} ${meta.bg} p-4`}>
+    <div id={id} className={`scroll-mt-24 rounded-lg border ${meta.border} ${meta.bg} p-4`}>
       <div className="flex items-start gap-3">
         <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${meta.chipBg}`}>
           <Icon className={`h-4 w-4 ${meta.text}`} />
@@ -65,6 +65,30 @@ function IssueRow({ issue }: { issue: Issue }) {
       </div>
     </div>
   );
+}
+
+function severityAnchorId(severity: IssueSeverity): string {
+  return `seo-issue-${severity}-first`;
+}
+
+function scrollToSeverity(severity: IssueSeverity) {
+  const el = document.getElementById(severityAnchorId(severity));
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  // brief highlight pulse
+  el.classList.add("ring-2", "ring-offset-2", "ring-offset-background");
+  const meta = SEVERITY_META[severity];
+  const ringClass =
+    severity === "critical"
+      ? "ring-destructive/60"
+      : severity === "warning"
+        ? "ring-warning/60"
+        : "ring-primary/60";
+  el.classList.add(ringClass);
+  void meta;
+  window.setTimeout(() => {
+    el.classList.remove("ring-2", "ring-offset-2", "ring-offset-background", ringClass);
+  }, 1600);
 }
 
 export function GradeCard({ grade, hideIssuesSection = false }: { grade: OverallGrade; hideIssuesSection?: boolean }) {
