@@ -135,6 +135,7 @@ async function runSingleSiteScan(scanId: string, url: string, scope: "quick" | "
 async function runSinglePageScan(scanId: string, url: string, auditType: "seo" | "a11y") {
   try {
     const report = await runSeoAuditForUrl(url, auditType);
+    const summary = summarizePageReport(report);
     await supabaseAdmin
       .from("scans")
       .update({
@@ -144,6 +145,8 @@ async function runSinglePageScan(scanId: string, url: string, auditType: "seo" |
         pages_total: 1,
         discovered_url_count: 1,
         report: report as never,
+        grade_letter: summary.grade_letter,
+        grade_score: summary.grade_score,
       })
       .eq("id", scanId);
     return true;
