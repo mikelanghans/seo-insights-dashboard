@@ -5,6 +5,15 @@ type PageLike = Pick<AuditReport, "onPage" | "schema">;
 
 export type IssueSeverity = "critical" | "warning" | "info";
 
+export interface IssueLocations {
+  /** e.g. "Image sources", "Missing tags". Singular/plural handled by caller. */
+  label: string;
+  /** Concrete items the user can fix. URLs, tag names, heading text, etc. */
+  items: string[];
+  /** True when the on-page audit truncated the list (e.g. captured only the first 10). */
+  truncated?: boolean;
+}
+
 export interface Issue {
   severity: IssueSeverity;
   title: string;
@@ -14,6 +23,8 @@ export interface Issue {
   groupKey?: string;
   /** Clean human label for the rollup, without per-page numbers. */
   groupTitle?: string;
+  /** Optional list of specific places the issue occurs (image URLs, missing tags, etc.). */
+  locations?: IssueLocations;
 }
 
 export interface GradeBreakdown {
@@ -171,6 +182,13 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
         description:
           "Alt text helps search engines understand images and is required for accessibility.",
         fix: 'Add a descriptive alt="…" attribute to every meaningful <img>. Use alt="" for decorative images.',
+        locations: op.images.missingAltSrcs.length
+          ? {
+              label: "Image sources",
+              items: op.images.missingAltSrcs,
+              truncated: op.images.missingAlt > op.images.missingAltSrcs.length,
+            }
+          : undefined,
       });
     }
   }
@@ -179,13 +197,19 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
   if (Object.keys(op.openGraph).length >= 3) {
     s += 5;
   } else {
+    const required = ["og:title", "og:description", "og:image", "og:url"];
+    const present = new Set(Object.keys(op.openGraph));
+    const missing = required.filter((t) => !present.has(t));
     issues.push({
       severity: "info",
       title: "Incomplete Open Graph tags",
       description: "OG tags control how your page looks when shared on social media and in chats.",
       fix: "Add og:title, og:description, og:image, and og:url meta tags in the <head>.",
+      locations: missing.length ? { label: "Missing tags", items: missing } : undefined,
     });
   }
+
+
 
   return {
     label: "On-Page SEO",

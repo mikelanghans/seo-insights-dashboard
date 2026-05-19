@@ -1,5 +1,6 @@
 import type { Issue, IssueSeverity, OverallGrade } from "@/lib/seo-grade";
-import { AlertCircle, AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronDown, Info } from "lucide-react";
+import { useState } from "react";
 
 function toneFor(score: number) {
   if (score >= 85) return { text: "text-success", bg: "bg-success", ring: "ring-success/30", soft: "bg-success/10" };
@@ -41,6 +42,9 @@ const SEVERITY_META: Record<
 function IssueRow({ issue, id }: { issue: Issue; id?: string }) {
   const meta = SEVERITY_META[issue.severity];
   const Icon = meta.icon;
+  const [open, setOpen] = useState(false);
+  const locations = issue.locations;
+  const count = locations?.items.length ?? 0;
   return (
     <div id={id} className={`scroll-mt-24 rounded-lg border ${meta.border} ${meta.bg} p-4`}>
       <div className="flex items-start gap-3">
@@ -61,6 +65,53 @@ function IssueRow({ issue, id }: { issue: Issue; id?: string }) {
             <span className="font-semibold">How to fix: </span>
             <span className="text-muted-foreground">{issue.fix}</span>
           </p>
+          {locations && count > 0 && (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                className={`inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background/60 px-2.5 py-1 text-xs font-semibold ${meta.text} transition hover:bg-background focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-offset-background`}
+              >
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+                />
+                {open ? "Hide" : "Show"} {locations.label.toLowerCase()} ({count}
+                {locations.truncated ? "+" : ""})
+              </button>
+              {open && (
+                <ul className="mt-2 space-y-1 rounded-md border border-border/60 bg-background/60 p-2.5 text-xs">
+                  {locations.items.map((item, i) => {
+                    const isUrl = /^https?:\/\//i.test(item);
+                    return (
+                      <li
+                        key={`${item}-${i}`}
+                        className="break-all font-mono text-muted-foreground"
+                      >
+                        {isUrl ? (
+                          <a
+                            href={item}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-foreground hover:underline"
+                          >
+                            {item}
+                          </a>
+                        ) : (
+                          item
+                        )}
+                      </li>
+                    );
+                  })}
+                  {locations.truncated && (
+                    <li className="pt-1 font-sans text-[11px] italic text-muted-foreground">
+                      Showing first {count} — more may exist on the page.
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
