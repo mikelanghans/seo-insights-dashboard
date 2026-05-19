@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS is_subscribed boolean NOT NULL DEFAULT false;

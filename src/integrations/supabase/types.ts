@@ -251,6 +251,7 @@ export type Database = {
           contact_name: string | null
           created_at: string
           id: string
+          is_subscribed: boolean
           name: string
           notes: string | null
           updated_at: string
@@ -260,6 +261,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           id?: string
+          is_subscribed?: boolean
           name: string
           notes?: string | null
           updated_at?: string
@@ -269,6 +271,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           id?: string
+          is_subscribed?: boolean
           name?: string
           notes?: string | null
           updated_at?: string
