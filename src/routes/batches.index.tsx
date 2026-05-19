@@ -330,8 +330,9 @@ function CreateBatchDialog({
     setSearch("");
     void (async () => {
       const clients = await listClients();
+      const subscribed = clients.filter((c) => c.isSubscribed);
       const out: ClientWithWebsites[] = [];
-      for (const c of clients) {
+      for (const c of subscribed) {
         const ws = await listClientWebsites(c.id);
         out.push({ client: c, websites: ws });
       }
