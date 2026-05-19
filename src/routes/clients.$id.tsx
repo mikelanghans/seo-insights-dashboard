@@ -1,5 +1,6 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,13 +30,12 @@ import {
   Pencil,
 } from "lucide-react";
 import { deleteClient, getClient, updateClient, type Client } from "@/lib/clients";
-import { listScansForClient, type SavedScanSummary } from "@/lib/scans";
+import { listScansForClient } from "@/lib/scans";
 import {
   listClientWebsites,
   createClientWebsite,
   updateClientWebsite,
   deleteClientWebsite,
-  type ClientWebsite,
 } from "@/lib/client-websites";
 import {
   Dialog,
@@ -76,9 +76,30 @@ function ClientDetailPage() {
   const { id } = Route.useParams();
   const navigate = Route.useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [client, setClient] = useState<Client | null | "missing">(null);
-  const [scans, setScans] = useState<SavedScanSummary[] | null>(null);
-  const [websites, setWebsites] = useState<ClientWebsite[] | null>(null);
+  const queryClient = useQueryClient();
+
+  const clientQuery = useQuery({
+    queryKey: ["client", id],
+    queryFn: () => getClient(id),
+    enabled: !!user,
+  });
+  const scansQuery = useQuery({
+    queryKey: ["client", id, "scans"],
+    queryFn: () => listScansForClient(id),
+    enabled: !!user,
+  });
+  const websitesQuery = useQuery({
+    queryKey: ["client", id, "websites"],
+    queryFn: () => listClientWebsites(id),
+    enabled: !!user,
+  });
+
+  const client: Client | null | "missing" =
+    clientQuery.isSuccess && clientQuery.data === null
+      ? "missing"
+      : clientQuery.data ?? null;
+  const scans = scansQuery.data ?? null;
+  const websites = websitesQuery.data ?? null;
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
   const [contactName, setContactName] = useState("");
@@ -89,31 +110,18 @@ function ClientDetailPage() {
   const [siteLabel, setSiteLabel] = useState("");
   const [addingSite, setAddingSite] = useState(false);
 
-  async function refreshWebsites() {
-    const ws = await listClientWebsites(id);
-    setWebsites(ws);
-  }
-
+  // Sync form fields when client loads.
   useEffect(() => {
-    if (!user) return;
-    void (async () => {
-      const [c, s, w] = await Promise.all([
-        getClient(id),
-        listScansForClient(id),
-        listClientWebsites(id),
-      ]);
-      if (!c) {
-        setClient("missing");
-        return;
-      }
-      setClient(c);
-      setName(c.name);
-      setContactName(c.contactName ?? "");
-      setNotes(c.notes ?? "");
-      setScans(s);
-      setWebsites(w);
-    })();
-  }, [user, id]);
+    if (client && client !== "missing") {
+      setName(client.name);
+      setContactName(client.contactName ?? "");
+      setNotes(client.notes ?? "");
+    }
+  }, [client]);
+
+  async function refreshWebsites() {
+    await queryClient.invalidateQueries({ queryKey: ["client", id, "websites"] });
+  }
 
   async function handleAddWebsite(e: FormEvent) {
     e.preventDefault();
@@ -178,12 +186,13 @@ function ClientDetailPage() {
       return;
     }
     toast.success("Client updated");
-    setClient({
+    queryClient.setQueryData<Client | null>(["client", id], {
       ...client,
       name,
       contactName: contactName.trim() ? contactName.trim() : null,
       notes: notes.trim() ? notes : null,
     });
+    void queryClient.invalidateQueries({ queryKey: ["clients"] });
     setEditing(false);
   }
 

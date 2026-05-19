@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Trash2, ExternalLink, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listRecentScans, deleteScan, type SavedScanSummary } from "@/lib/scans";
@@ -41,34 +42,31 @@ function phaseLabel(phase: SavedScanSummary["phase"]): string {
 }
 
 export function RecentScans({ refreshKey }: { refreshKey?: number }) {
-  const [scans, setScans] = useState<SavedScanSummary[] | null>(null);
+  const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Poll while any scan is still running so the list stays live.
+  const { data: scans = null, refetch } = useQuery({
+    queryKey: ["recent-scans"],
+    queryFn: () => listRecentScans(10),
+    refetchInterval: (q) => {
+      const data = q.state.data as SavedScanSummary[] | undefined;
+      const stillRunning = data?.some((s) => s.status === "pending" || s.status === "running");
+      return stillRunning ? 2500 : false;
+    },
+  });
+
+  // Refetch on demand when the parent bumps refreshKey (e.g. after a new scan starts).
   useEffect(() => {
-    let active = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const tick = async () => {
-      const data = await listRecentScans(10);
-      if (!active) return;
-      setScans(data);
-      const stillRunning = data.some((s) => s.status === "pending" || s.status === "running");
-      if (stillRunning) timer = setTimeout(tick, 2500);
-    };
-    void tick();
-
-    return () => {
-      active = false;
-      if (timer) clearTimeout(timer);
-    };
-  }, [refreshKey]);
+    if (refreshKey !== undefined) void refetch();
+  }, [refreshKey, refetch]);
 
   async function handleDelete(id: string) {
     setDeleting(id);
     const ok = await deleteScan(id);
     if (ok) {
-      setScans((prev) => prev?.filter((s) => s.id !== id) ?? null);
+      queryClient.setQueryData<SavedScanSummary[]>(["recent-scans"], (prev) =>
+        prev ? prev.filter((s) => s.id !== id) : prev,
+      );
       toast.success("Scan deleted");
     } else {
       toast.error("Failed to delete scan");
