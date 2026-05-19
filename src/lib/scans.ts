@@ -149,24 +149,89 @@ export async function listScansForClient(clientId: string): Promise<SavedScanSum
   return (data as SummaryRow[]).map(mapSummary);
 }
 
-/** Load the most recent completed scan per client (with report) for the dashboard. */
-export async function listLatestScanPerClient(): Promise<Record<string, SavedScan | SavedPageScan>> {
+export interface ClientLatestScanSummary extends SavedScanSummary {
+  gradeLetter: string | null;
+  gradeScore: number | null;
+}
+
+/**
+ * Load the most recent completed scan per client for the dashboard list.
+ * Does NOT pull the `report` jsonb — uses precomputed `grade_letter`/`grade_score`
+ * columns so the payload stays tiny even with thousands of scans.
+ *
+ * For legacy scans (created before grade columns existed), it lazily backfills
+ * by loading just those reports, computing the grade in JS, and updating the row.
+ * After the first call, all rows have grades and subsequent calls are fast.
+ */
+export async function listLatestScanPerClient(): Promise<Record<string, ClientLatestScanSummary>> {
   const { data, error } = await supabase
     .from("scans")
-    .select(`${SUMMARY_COLUMNS}, report`)
+    .select(`${SUMMARY_COLUMNS}, grade_letter, grade_score`)
     .not("client_id", "is", null)
     .eq("status", "complete")
     .order("created_at", { ascending: false })
     .limit(500);
   if (error || !data) return {};
-  const out: Record<string, SavedScan | SavedPageScan> = {};
-  for (const row of data as (SummaryRow & { report: unknown })[]) {
+
+  const out: Record<string, ClientLatestScanSummary> = {};
+  const needsBackfill: string[] = [];
+  for (const row of data as (SummaryRow & { grade_letter: string | null; grade_score: number | null })[]) {
     const clientId = row.client_id;
     if (!clientId || out[clientId]) continue;
-    const summary = mapSummary(row);
-    out[clientId] = { ...summary, report: row.report as never };
+    out[clientId] = {
+      ...mapSummary(row),
+      gradeLetter: row.grade_letter,
+      gradeScore: row.grade_score,
+    };
+    if (row.grade_letter === null) needsBackfill.push(row.id);
+  }
+
+  // Lazy backfill legacy rows in the background — does not block the UI.
+  if (needsBackfill.length > 0) {
+    void backfillScanGrades(needsBackfill).then((filled) => {
+      for (const [scanId, summary] of filled) {
+        for (const cid of Object.keys(out)) {
+          if (out[cid].id === scanId) {
+            out[cid] = {
+              ...out[cid],
+              gradeLetter: summary.grade_letter,
+              gradeScore: summary.grade_score,
+            };
+          }
+        }
+      }
+    });
   }
   return out;
+}
+
+async function backfillScanGrades(
+  scanIds: string[],
+): Promise<Array<[string, { grade_letter: string; grade_score: number }]>> {
+  // Lazy import to keep computeGrade out of the hot path.
+  const { summarizeSiteReport, summarizePageReport } = await import("./scan-grade-summary");
+  const { data } = await supabase
+    .from("scans")
+    .select("id, kind, report")
+    .in("id", scanIds);
+  if (!data) return [];
+  const filled: Array<[string, { grade_letter: string; grade_score: number }]> = [];
+  for (const row of data as { id: string; kind: string | null; report: unknown }[]) {
+    try {
+      const summary =
+        (row.kind ?? "site") === "page"
+          ? summarizePageReport(row.report as AuditReport)
+          : summarizeSiteReport(row.report as SiteAuditReport);
+      await supabase
+        .from("scans")
+        .update({ grade_letter: summary.grade_letter, grade_score: summary.grade_score })
+        .eq("id", row.id);
+      filled.push([row.id, summary]);
+    } catch (err) {
+      console.warn("[backfillScanGrades] failed for", row.id, err);
+    }
+  }
+  return filled;
 }
 
 export async function getScanStatus(id: string): Promise<SavedScanSummary | null> {
