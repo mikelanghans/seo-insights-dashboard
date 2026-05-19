@@ -101,19 +101,21 @@ function formatNext(iso: string | null): string {
 function BatchesPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [batches, setBatches] = useState<Batch[] | null>(null);
+  const queryClient = useQueryClient();
   const [createOpen, setCreateOpen] = useState(false);
   const [runningId, setRunningId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Batch | null>(null);
 
-  async function refresh() {
-    setBatches(await listBatches());
-  }
+  const batchesQuery = useQuery({
+    queryKey: ["batches"],
+    queryFn: listBatches,
+    enabled: !!user,
+  });
+  const batches: Batch[] | null = batchesQuery.data ?? null;
 
-  useEffect(() => {
-    if (!user) return;
-    void refresh();
-  }, [user]);
+  function refresh() {
+    void queryClient.invalidateQueries({ queryKey: ["batches"] });
+  }
 
   async function handleRun(b: Batch) {
     setRunningId(b.id);
