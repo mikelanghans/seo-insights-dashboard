@@ -14,6 +14,183 @@ export type Database = {
   }
   public: {
     Tables: {
+      batch_run_scans: {
+        Row: {
+          batch_run_id: string
+          client_id: string | null
+          client_website_id: string | null
+          created_at: string
+          id: string
+          scan_id: string
+          user_id: string
+        }
+        Insert: {
+          batch_run_id: string
+          client_id?: string | null
+          client_website_id?: string | null
+          created_at?: string
+          id?: string
+          scan_id: string
+          user_id: string
+        }
+        Update: {
+          batch_run_id?: string
+          client_id?: string | null
+          client_website_id?: string | null
+          created_at?: string
+          id?: string
+          scan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_run_scans_batch_run_id_fkey"
+            columns: ["batch_run_id"]
+            isOneToOne: false
+            referencedRelation: "batch_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batch_runs: {
+        Row: {
+          batch_id: string
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          scans_completed: number
+          scans_failed: number
+          scans_total: number
+          started_at: string
+          status: string
+          trigger: string
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          scans_completed?: number
+          scans_failed?: number
+          scans_total?: number
+          started_at?: string
+          status?: string
+          trigger?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          scans_completed?: number
+          scans_failed?: number
+          scans_total?: number
+          started_at?: string
+          status?: string
+          trigger?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_runs_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batch_targets: {
+        Row: {
+          batch_id: string
+          client_id: string
+          client_website_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          batch_id: string
+          client_id: string
+          client_website_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          batch_id?: string
+          client_id?: string
+          client_website_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_targets_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batches: {
+        Row: {
+          audit_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          scan_kind: string
+          schedule_day_of_month: number | null
+          schedule_day_of_week: number | null
+          schedule_hour: number
+          schedule_type: string
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audit_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          scan_kind?: string
+          schedule_day_of_month?: number | null
+          schedule_day_of_week?: number | null
+          schedule_hour?: number
+          schedule_type?: string
+          scope?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audit_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          scan_kind?: string
+          schedule_day_of_month?: number | null
+          schedule_day_of_week?: number | null
+          schedule_hour?: number
+          schedule_type?: string
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_websites: {
         Row: {
           client_id: string
