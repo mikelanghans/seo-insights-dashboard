@@ -241,7 +241,14 @@ export function SiteResults({
     </div>
   );
 }
-
+function shortenUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return (u.pathname + u.search) || "/";
+  } catch {
+    return url;
+  }
+}
 
 const MAX_SELECTABLE = 50;
 
