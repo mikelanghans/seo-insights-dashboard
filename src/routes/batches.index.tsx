@@ -555,6 +555,7 @@ function CreateBatchDialog({
               setSelected={setSelected}
               search={search}
               setSearch={setSearch}
+              isScheduled={scheduleType !== "manual"}
             />
           )}
 
