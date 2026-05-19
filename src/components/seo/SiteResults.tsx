@@ -100,10 +100,7 @@ export function SiteResults({
         </div>
       )}
 
-      {/* Site-wide issue rollup */}
-      {site.issueRollup.length > 0 && (
-        <SiteIssueRollup issues={site.issueRollup} />
-      )}
+      {/* Per-page table below already groups issues by page — no separate rollup. */}
 
       {/* Per-page table */}
       <div className="rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
