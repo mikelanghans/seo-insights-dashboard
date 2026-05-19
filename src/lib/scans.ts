@@ -128,13 +128,18 @@ export async function linkRetryScan(originalId: string, retryId: string): Promis
   if (error) console.error("Failed to link retry scan:", error);
 }
 
-export async function listRecentScans(limit = 10): Promise<SavedScanSummary[]> {
-  const { data, error } = await supabase
+export async function listRecentScans(
+  limit = 10,
+  opts?: { since?: string | null; until?: string | null },
+): Promise<SavedScanSummary[]> {
+  let q = supabase
     .from("scans")
     .select(SUMMARY_COLUMNS)
     .order("created_at", { ascending: false })
     .limit(limit);
-
+  if (opts?.since) q = q.gte("created_at", opts.since);
+  if (opts?.until) q = q.lte("created_at", opts.until);
+  const { data, error } = await q;
   if (error || !data) return [];
   return (data as SummaryRow[]).map(mapSummary);
 }
