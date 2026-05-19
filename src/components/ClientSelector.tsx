@@ -181,12 +181,12 @@ export function ClientSelector({
                             value === c.id ? "opacity-100" : "opacity-0",
                           )}
                         />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{c.name}</p>
+                        <div className="min-w-0 flex-1 truncate text-sm">
+                          <span className="font-medium">{c.name}</span>
                           {c.contactName && (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {c.contactName}
-                            </p>
+                            <span className="ml-1.5 text-muted-foreground">
+                              · {c.contactName}
+                            </span>
                           )}
                         </div>
                       </CommandItem>
