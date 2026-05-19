@@ -550,90 +550,13 @@ function CreateBatchDialog({
               )}
             </div>
           ) : (
-            <div className="py-4">
-              {clientsData === null ? (
-                <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading clients…
-                </div>
-              ) : clientsData.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-                  No clients yet. Add a client and at least one website first.
-                </div>
-              ) : (
-                <div className="max-h-[420px] space-y-3 overflow-y-auto pr-2">
-                  {clientsData.map((c) => {
-                    if (c.websites.length === 0) {
-                      return (
-                        <div
-                          key={c.client.id}
-                          className="rounded-lg border border-border bg-muted/30 p-3 text-sm text-muted-foreground"
-                        >
-                          <span className="font-medium text-foreground">{c.client.name}</span> — no
-                          websites
-                        </div>
-                      );
-                    }
-                    const allKeys = c.websites.map((w) => `${c.client.id}::${w.id}`);
-                    const allSelected = allKeys.every((k) => selected.has(k));
-                    const someSelected = allKeys.some((k) => selected.has(k));
-                    return (
-                      <div
-                        key={c.client.id}
-                        className="rounded-lg border border-border bg-card p-3"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={
-                                allSelected ? true : someSelected ? "indeterminate" : false
-                              }
-                              onCheckedChange={() => toggleClientAll(c)}
-                            />
-                            <span className="text-sm font-semibold text-foreground">
-                              {c.client.name}
-                            </span>
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {c.websites.length} website{c.websites.length === 1 ? "" : "s"}
-                          </span>
-                        </div>
-                        <ul className="mt-2 space-y-1 pl-6">
-                          {c.websites.map((w) => {
-                            const key = `${c.client.id}::${w.id}`;
-                            return (
-                              <li key={w.id} className="flex items-center gap-2">
-                                <Checkbox
-                                  id={key}
-                                  checked={selected.has(key)}
-                                  onCheckedChange={() => toggleSelection(c.client.id, w.id)}
-                                />
-                                <Label
-                                  htmlFor={key}
-                                  className="flex-1 cursor-pointer truncate text-xs font-normal text-muted-foreground"
-                                >
-                                  <span className="font-medium text-foreground">
-                                    {w.label || w.url.replace(/^https?:\/\//, "")}
-                                  </span>
-                                  {w.isPrimary && (
-                                    <Badge
-                                      variant="outline"
-                                      className="ml-1.5 h-4 text-[9px] uppercase"
-                                    >
-                                      primary
-                                    </Badge>
-                                  )}
-                                </Label>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <p className="mt-3 text-xs text-muted-foreground">{totalSelected} selected</p>
-            </div>
+            <Step2Tiles
+              clientsData={clientsData}
+              selected={selected}
+              setSelected={setSelected}
+              search={search}
+              setSearch={setSearch}
+            />
           )}
 
           <DialogFooter>
