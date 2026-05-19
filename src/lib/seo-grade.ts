@@ -182,8 +182,31 @@ function scoreOnPage(report: PageLike): GradeBreakdown {
         description:
           "Alt text helps search engines understand images and is required for accessibility.",
         fix: 'Add a descriptive alt="…" attribute to every meaningful <img>. Use alt="" for decorative images.',
+        locations: op.images.missingAltSrcs.length
+          ? {
+              label: "Image sources",
+              items: op.images.missingAltSrcs,
+              truncated: op.images.missingAlt > op.images.missingAltSrcs.length,
+            }
+          : undefined,
       });
     }
+  }
+
+  // Open Graph (5)
+  if (Object.keys(op.openGraph).length >= 3) {
+    s += 5;
+  } else {
+    const required = ["og:title", "og:description", "og:image", "og:url"];
+    const present = new Set(Object.keys(op.openGraph));
+    const missing = required.filter((t) => !present.has(t));
+    issues.push({
+      severity: "info",
+      title: "Incomplete Open Graph tags",
+      description: "OG tags control how your page looks when shared on social media and in chats.",
+      fix: "Add og:title, og:description, og:image, and og:url meta tags in the <head>.",
+      locations: missing.length ? { label: "Missing tags", items: missing } : undefined,
+    });
   }
 
   // Open Graph (5)
