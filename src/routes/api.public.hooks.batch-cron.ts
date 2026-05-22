@@ -10,10 +10,12 @@ export const Route = createFileRoute("/api/public/hooks/batch-cron")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = request.headers.get("apikey") || request.headers.get("x-api-key");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-        if (!expected || apiKey !== expected) {
+        const apiKey =
+          request.headers.get("x-cron-secret") ||
+          request.headers.get("x-api-key") ||
+          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+        const expected = process.env.CRON_SECRET;
+        if (!expected || !apiKey || apiKey !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
 
