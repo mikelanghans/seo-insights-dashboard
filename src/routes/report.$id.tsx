@@ -6,7 +6,6 @@ import {
   Globe,
   Gauge,
   Code2,
-  Eye: _Eye,
   ExternalLink,
   Printer,
   ShieldCheck,
