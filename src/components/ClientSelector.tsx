@@ -125,8 +125,8 @@ export function ClientSelector({
   const [pickerOpen, setPickerOpen] = useState(false);
   const selected = clients?.find((c) => c.id === value) ?? null;
   const placeholderText = clients && clients.length === 0
-    ? "No clients yet — create one"
-    : "Select a client";
+    ? "Ad-hoc scan (no client)"
+    : "Ad-hoc scan (no client)";
 
   return (
     <>
