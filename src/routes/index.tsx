@@ -56,7 +56,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 type ScanMode = "single" | "site";
-type ScanType = "seo" | "a11y";
+type ScanType = "seo" | "a11y" | "both";
 type SiteScope = "quick" | "standard" | "deep";
 
 const SCOPE_LABELS: Record<SiteScope, { label: string; pages: number; desc: string }> = {
@@ -117,6 +117,11 @@ function Index() {
   useEffect(() => {
     setClientWebsite(null);
   }, [clientId]);
+
+  // Site (multi-page) scans are SEO-only; reset to single page for other types.
+  useEffect(() => {
+    if (scanType !== "seo" && mode !== "single") setMode("single");
+  }, [scanType, mode]);
 
   // When a client website is chosen, prefill the URL field
   useEffect(() => {
@@ -266,11 +271,12 @@ function Index() {
           </p>
 
           {/* Scan-type toggle */}
-          <div className="mx-auto mt-7 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
+          <div className="mx-auto mt-7 inline-flex flex-wrap justify-center rounded-full border border-border bg-background/95 p-1 shadow-sm">
             {(
               [
-                { value: "seo", label: "SEO scan", icon: ScanSearch },
-                { value: "a11y", label: "Accessibility scan", icon: Eye },
+                { value: "seo", label: "SEO", icon: ScanSearch },
+                { value: "a11y", label: "Accessibility", icon: Eye },
+                { value: "both", label: "SEO + Accessibility", icon: Layers },
               ] as const
             ).map((opt) => {
               const Icon = opt.icon;
@@ -504,7 +510,9 @@ function Index() {
                 <GradeCard grade={computeGrade(report)} />
 
                 <Tabs defaultValue="onpage" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-card shadow-[var(--shadow-card)] h-auto p-1">
+                  <TabsList
+                    className={`grid w-full ${report.auditType === "both" ? "grid-cols-4" : "grid-cols-3"} bg-card shadow-[var(--shadow-card)] h-auto p-1`}
+                  >
                     <TabsTrigger value="onpage" className="gap-2 py-2.5">
                       <Globe className="h-4 w-4" />
                       <span className="hidden sm:inline">On-Page SEO</span>
@@ -519,6 +527,13 @@ function Index() {
                       <Code2 className="h-4 w-4" />
                       Schema
                     </TabsTrigger>
+                    {report.auditType === "both" && (
+                      <TabsTrigger value="a11y" className="gap-2 py-2.5">
+                        <Eye className="h-4 w-4" />
+                        <span className="hidden sm:inline">Accessibility</span>
+                        <span className="sm:hidden">A11y</span>
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                   <TabsContent value="onpage" className="mt-6">
@@ -533,6 +548,11 @@ function Index() {
                   <TabsContent value="schema" className="mt-6">
                     <SchemaTab items={report.schema} />
                   </TabsContent>
+                  {report.auditType === "both" && (
+                    <TabsContent value="a11y" className="mt-6">
+                      <AccessibilityTab report={report.accessibility} />
+                    </TabsContent>
+                  )}
                 </Tabs>
               </>
             )}

@@ -32,7 +32,8 @@ export const Route = createFileRoute("/api/seo-audit")({
             return safeError(e instanceof Error ? e.message : "Invalid URL", 400);
           }
 
-          const auditType = body.auditType === "a11y" ? "a11y" : "seo";
+          const auditType: "seo" | "a11y" | "both" =
+            body.auditType === "a11y" ? "a11y" : body.auditType === "both" ? "both" : "seo";
 
           // Resolve & validate client ownership.
           let clientId: string | null = null;

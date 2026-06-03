@@ -10,7 +10,7 @@ export interface SavedScanSummary {
   rootUrl: string;
   scope: string;
   kind: ScanKind;
-  auditType: "seo" | "a11y" | null;
+  auditType: "seo" | "a11y" | "both" | null;
   status: ScanStatus;
   phase: ScanPhase;
   pagesScanned: number;
@@ -64,7 +64,7 @@ function mapSummary(row: SummaryRow): SavedScanSummary {
     rootUrl: row.root_url,
     scope: row.scope,
     kind: ((row.kind as ScanKind) ?? "site"),
-    auditType: (row.audit_type as "seo" | "a11y" | null) ?? null,
+    auditType: (row.audit_type as "seo" | "a11y" | "both" | null) ?? null,
     status: (row.status as ScanStatus) ?? "complete",
     phase: (row.phase as ScanPhase) ?? null,
     pagesScanned: row.pages_scanned,
