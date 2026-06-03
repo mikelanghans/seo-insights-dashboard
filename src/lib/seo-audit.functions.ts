@@ -245,10 +245,11 @@ async function fetchAuditHtml(url: string): Promise<{ finalUrl: string; status: 
   throw new Error(`Could not load that page. The site may be blocking crawlers or temporarily unavailable. (${lastError})`);
 }
 
-export async function runSeoAuditForUrl(rawUrl: string, auditType: "seo" | "a11y" = "seo") {
+export async function runSeoAuditForUrl(rawUrl: string, auditType: "seo" | "a11y" | "both" = "seo") {
     const url = normalizeAuditUrl(rawUrl);
+    const includeSeo = auditType !== "a11y";
     const tasks: Promise<unknown>[] = [fetchAuditHtml(url)];
-    if (auditType === "seo") {
+    if (includeSeo) {
       tasks.push(fetchPageSpeed(url, "mobile"));
       tasks.push(fetchPageSpeed(url, "desktop"));
     }
@@ -262,7 +263,7 @@ export async function runSeoAuditForUrl(rawUrl: string, auditType: "seo" | "a11y
       : undefined;
 
     let pageSpeed: { mobile: PageSpeedReport; desktop: PageSpeedReport } | undefined;
-    if (auditType === "seo") {
+    if (includeSeo) {
       const mobile = settled[1] as PromiseSettledResult<PageSpeedReport>;
       const desktop = settled[2] as PromiseSettledResult<PageSpeedReport>;
       pageSpeed = {
@@ -277,7 +278,7 @@ export async function runSeoAuditForUrl(rawUrl: string, auditType: "seo" | "a11y
       httpStatus: page?.status ?? 0,
       auditType,
       onPage: page ? parseOnPage(page.html, page.finalUrl) : emptyOnPageReport(url),
-      schema: auditType === "seo" && page ? parseSchema(page.html) : [],
+      schema: includeSeo && page ? parseSchema(page.html) : [],
       pageSpeed: pageSpeed ?? {
         mobile: { strategy: "mobile" as const, performanceScore: null, seoScore: null, accessibilityScore: null, bestPracticesScore: null, metrics: { lcp: null, fid: null, cls: null, fcp: null, ttfb: null, inp: null }, error: "Skipped (accessibility-only scan)" },
         desktop: { strategy: "desktop" as const, performanceScore: null, seoScore: null, accessibilityScore: null, bestPracticesScore: null, metrics: { lcp: null, fid: null, cls: null, fcp: null, ttfb: null, inp: null }, error: "Skipped (accessibility-only scan)" },
