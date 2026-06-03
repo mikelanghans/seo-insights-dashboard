@@ -230,7 +230,7 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
                     </span>
                   ) : isPage ? (
                     <>
-                      Single page · {scan.auditType === "a11y" ? "Accessibility" : "SEO"} · {timeAgo(scan.createdAt)}
+                      Single page · {scan.auditType === "a11y" ? "Accessibility" : scan.auditType === "both" ? "SEO + Accessibility" : "SEO"} · {timeAgo(scan.createdAt)}
                     </>
                   ) : (
                     <>
