@@ -177,7 +177,7 @@ export interface ClientLatestScanSummary extends SavedScanSummary {
 export async function listLatestScanPerClient(): Promise<Record<string, ClientLatestScanSummary>> {
   const { data, error } = await supabase
     .from("scans")
-    .select(`${SUMMARY_COLUMNS}, grade_letter, grade_score`)
+    .select(SUMMARY_COLUMNS)
     .not("client_id", "is", null)
     .eq("status", "complete")
     .order("created_at", { ascending: false })
