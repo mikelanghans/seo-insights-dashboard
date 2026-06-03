@@ -163,6 +163,23 @@ export function ClientSelector({
             <CommandInput placeholder="Search by name…" />
             <CommandList>
               <CommandEmpty>No clients match.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value={NONE_VALUE}
+                  onSelect={() => {
+                    onChange(null);
+                    setPickerOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-3.5 w-3.5",
+                      value === null ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  <span className="text-sm">Ad-hoc scan (no client)</span>
+                </CommandItem>
+              </CommandGroup>
               {clients && clients.length > 0 && (
                 <CommandGroup heading="Clients">
                   {clients.map((c) => {
