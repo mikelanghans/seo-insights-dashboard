@@ -257,7 +257,9 @@ export function GradeCard({ grade, hideIssuesSection = false }: { grade: Overall
               <div>
                 <p className="text-sm font-semibold text-foreground">No issues detected</p>
                 <p className="text-xs text-muted-foreground">
-                  This page meets the audited SEO and AEO best practices.
+                  {grade.score >= 100
+                    ? "This page meets the audited SEO and AEO best practices."
+                    : "This page passes every SEO and AEO check — the score reflects measured Page Speed, where small gains can still nudge it higher."}
                 </p>
               </div>
             </div>
