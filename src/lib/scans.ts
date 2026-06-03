@@ -147,7 +147,14 @@ export async function listRecentScans(
   if (opts?.until) q = q.lte("created_at", opts.until);
   const { data, error } = await q;
   if (error || !data) return [];
-  return (data as SummaryRow[]).map(mapSummary);
+  const rows = (data as SummaryRow[]).map(mapSummary);
+  const needsBackfill = rows
+    .filter((r) => r.status === "complete" && r.gradeLetter === null)
+    .map((r) => r.id);
+  if (needsBackfill.length > 0) {
+    void backfillScanGrades(needsBackfill);
+  }
+  return rows;
 }
 
 export async function listScansForClient(clientId: string): Promise<SavedScanSummary[]> {
