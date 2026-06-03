@@ -116,16 +116,12 @@ function BadSeoPage() {
 
         <section>
           <h2>Frequently asked questions</h2>
-          <dl>
-            {FAQS.map((f) => (
-              <div key={f.q}>
-                <dt>
-                  <strong>{f.q}</strong>
-                </dt>
-                <dd>{f.a}</dd>
-              </div>
-            ))}
-          </dl>
+          {FAQS.map((f) => (
+            <div key={f.q}>
+              <h3>{f.q}</h3>
+              <p>{f.a}</p>
+            </div>
+          ))}
         </section>
       </article>
     </main>
