@@ -54,6 +54,8 @@ type SummaryRow = {
   client_name: string | null;
   created_at: string;
   updated_at: string;
+  grade_letter: string | null;
+  grade_score: number | null;
 };
 
 function mapSummary(row: SummaryRow): SavedScanSummary {
@@ -74,6 +76,8 @@ function mapSummary(row: SummaryRow): SavedScanSummary {
     clientName: row.client_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    gradeLetter: row.grade_letter,
+    gradeScore: row.grade_score,
   };
 }
 
