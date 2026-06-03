@@ -118,6 +118,11 @@ function Index() {
     setClientWebsite(null);
   }, [clientId]);
 
+  // Site (multi-page) scans are SEO-only; reset to single page for other types.
+  useEffect(() => {
+    if (scanType !== "seo" && mode !== "single") setMode("single");
+  }, [scanType, mode]);
+
   // When a client website is chosen, prefill the URL field
   useEffect(() => {
     if (clientWebsite) setUrl(clientWebsite.url);
