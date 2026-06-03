@@ -58,6 +58,17 @@ export const Route = createFileRoute("/bad-seo")({
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Turbo Audit",
+          url: "https://turbo-audit.lovable.app",
+          logo: "https://turbo-audit.lovable.app/favicon.ico",
+          sameAs: ["https://lovable.dev"],
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
           "@type": "Article",
           headline: "Bad SEO Test Page — Turbo Audit",
           description:
