@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const NEW_VALUE = "__new__";
+const NONE_VALUE = "__none__";
 
 export function ClientSelector({
   value,
@@ -124,8 +125,8 @@ export function ClientSelector({
   const [pickerOpen, setPickerOpen] = useState(false);
   const selected = clients?.find((c) => c.id === value) ?? null;
   const placeholderText = clients && clients.length === 0
-    ? "No clients yet — create one"
-    : "Select a client";
+    ? "Ad-hoc scan (no client)"
+    : "Ad-hoc scan (no client)";
 
   return (
     <>
@@ -155,13 +156,30 @@ export function ClientSelector({
         <PopoverContent className="w-[260px] p-0" align="end">
           <Command
             filter={(itemValue, search) => {
-              if (itemValue === NEW_VALUE) return 1;
+              if (itemValue === NEW_VALUE || itemValue === NONE_VALUE) return 1;
               return itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
             }}
           >
             <CommandInput placeholder="Search by name…" />
             <CommandList>
               <CommandEmpty>No clients match.</CommandEmpty>
+              <CommandGroup>
+                <CommandItem
+                  value={NONE_VALUE}
+                  onSelect={() => {
+                    onChange(null);
+                    setPickerOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-3.5 w-3.5",
+                      value === null ? "opacity-100" : "opacity-0",
+                    )}
+                  />
+                  <span className="text-sm">Ad-hoc scan (no client)</span>
+                </CommandItem>
+              </CommandGroup>
               {clients && clients.length > 0 && (
                 <CommandGroup heading="Clients">
                   {clients.map((c) => {
