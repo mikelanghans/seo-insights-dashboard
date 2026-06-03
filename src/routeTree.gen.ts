@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as BadSeoRouteImport } from './routes/bad-seo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClientsIndexRouteImport } from './routes/clients.index'
@@ -28,6 +29,11 @@ import { Route as ApiPublicHooksBatchCronRouteImport } from './routes/api.public
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BadSeoRoute = BadSeoRouteImport.update({
+  id: '/bad-seo',
+  path: '/bad-seo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -104,6 +110,7 @@ const ApiPublicHooksBatchCronRoute = ApiPublicHooksBatchCronRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bad-seo': typeof BadSeoRoute
   '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bad-seo': typeof BadSeoRoute
   '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bad-seo': typeof BadSeoRoute
   '/history': typeof HistoryRoute
   '/api/scan-start': typeof ApiScanStartRoute
   '/api/seo-audit': typeof ApiSeoAuditRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/bad-seo'
     | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/bad-seo'
     | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/bad-seo'
     | '/history'
     | '/api/scan-start'
     | '/api/seo-audit'
@@ -210,6 +222,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  BadSeoRoute: typeof BadSeoRoute
   HistoryRoute: typeof HistoryRoute
   ApiScanStartRoute: typeof ApiScanStartRoute
   ApiSeoAuditRoute: typeof ApiSeoAuditRoute
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bad-seo': {
+      id: '/bad-seo'
+      path: '/bad-seo'
+      fullPath: '/bad-seo'
+      preLoaderRoute: typeof BadSeoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -338,6 +358,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  BadSeoRoute: BadSeoRoute,
   HistoryRoute: HistoryRoute,
   ApiScanStartRoute: ApiScanStartRoute,
   ApiSeoAuditRoute: ApiSeoAuditRoute,
@@ -355,12 +376,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
