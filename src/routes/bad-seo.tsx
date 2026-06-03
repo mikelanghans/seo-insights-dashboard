@@ -58,6 +58,17 @@ export const Route = createFileRoute("/bad-seo")({
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Turbo Audit",
+          url: "https://turbo-audit.lovable.app",
+          logo: "https://turbo-audit.lovable.app/favicon.ico",
+          sameAs: ["https://lovable.dev"],
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
           "@type": "Article",
           headline: "Bad SEO Test Page — Turbo Audit",
           description:
@@ -105,16 +116,12 @@ function BadSeoPage() {
 
         <section>
           <h2>Frequently asked questions</h2>
-          <dl>
-            {FAQS.map((f) => (
-              <div key={f.q}>
-                <dt>
-                  <strong>{f.q}</strong>
-                </dt>
-                <dd>{f.a}</dd>
-              </div>
-            ))}
-          </dl>
+          {FAQS.map((f) => (
+            <div key={f.q}>
+              <h3>{f.q}</h3>
+              <p>{f.a}</p>
+            </div>
+          ))}
         </section>
       </article>
     </main>
