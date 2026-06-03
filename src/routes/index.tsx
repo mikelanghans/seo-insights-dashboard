@@ -56,7 +56,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 type ScanMode = "single" | "site";
-type ScanType = "seo" | "a11y";
+type ScanType = "seo" | "a11y" | "both";
 type SiteScope = "quick" | "standard" | "deep";
 
 const SCOPE_LABELS: Record<SiteScope, { label: string; pages: number; desc: string }> = {
