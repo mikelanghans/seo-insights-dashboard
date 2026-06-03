@@ -10,7 +10,7 @@ export interface SavedScanSummary {
   rootUrl: string;
   scope: string;
   kind: ScanKind;
-  auditType: "seo" | "a11y" | null;
+  auditType: "seo" | "a11y" | "both" | null;
   status: ScanStatus;
   phase: ScanPhase;
   pagesScanned: number;
