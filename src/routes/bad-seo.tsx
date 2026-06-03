@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Partially-fixed SEO test page. Round 2 — half of the remaining issues fixed.
-// Fixed previously: title, meta description, single H1, image alt.
-// Fixed this round:
-// - Open Graph tags (og:title, og:description, og:url, og:type)
-// - Canonical link
-// Still broken (on purpose):
-// - Non-descriptive link text ("here", "read more")
-// - No <main> landmark / semantic structure
+// Fully-fixed SEO test page. All known issues from earlier rounds are resolved:
+// - Title + meta description
+// - Open Graph tags + canonical
+// - Single H1, image alt
+// - Descriptive link text
+// - <main> landmark / semantic structure
 export const Route = createFileRoute("/bad-seo")({
   component: BadSeoPage,
   head: () => ({
@@ -16,13 +14,13 @@ export const Route = createFileRoute("/bad-seo")({
       {
         name: "description",
         content:
-          "Test fixture page used to validate the SEO scanner. Half of the common issues have been fixed; the rest remain on purpose.",
+          "Test fixture page used to validate the SEO scanner. All previously-flagged issues have been resolved.",
       },
       { property: "og:title", content: "Bad SEO Test Page — Turbo Audit" },
       {
         property: "og:description",
         content:
-          "Test fixture page used to validate the SEO scanner. Half of the common issues have been fixed; the rest remain on purpose.",
+          "Test fixture page used to validate the SEO scanner. All previously-flagged issues have been resolved.",
       },
       { property: "og:url", content: "https://turbo-audit.lovable.app/bad-seo" },
       { property: "og:type", content: "website" },
@@ -35,15 +33,23 @@ export const Route = createFileRoute("/bad-seo")({
 
 function BadSeoPage() {
   return (
-    <div>
+    <main>
       <h1>Bad SEO Test Page</h1>
-      <h2>Another Heading</h2>
-      <img src="https://placehold.co/600x400" alt="Placeholder image used for SEO scanner testing" />
-      <p>
-        Click <a href="/">here</a> to go back.
-      </p>
-      <a href="/about">read more</a>
-      <div>lorem ipsum dolor sit amet</div>
-    </div>
+      <section>
+        <h2>About this page</h2>
+        <img
+          src="https://placehold.co/600x400"
+          alt="Placeholder image used for SEO scanner testing"
+          width={600}
+          height={400}
+        />
+        <p>
+          This fixture page is used to validate the Turbo Audit SEO scanner.{" "}
+          <a href="/">Return to the Turbo Audit home page</a> or{" "}
+          <a href="/history">view recent scan history</a>.
+        </p>
+        <p>lorem ipsum dolor sit amet</p>
+      </section>
+    </main>
   );
 }
