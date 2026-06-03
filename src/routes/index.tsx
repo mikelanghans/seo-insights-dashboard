@@ -266,11 +266,12 @@ function Index() {
           </p>
 
           {/* Scan-type toggle */}
-          <div className="mx-auto mt-7 inline-flex rounded-full border border-border bg-background/95 p-1 shadow-sm">
+          <div className="mx-auto mt-7 inline-flex flex-wrap justify-center rounded-full border border-border bg-background/95 p-1 shadow-sm">
             {(
               [
-                { value: "seo", label: "SEO scan", icon: ScanSearch },
-                { value: "a11y", label: "Accessibility scan", icon: Eye },
+                { value: "seo", label: "SEO", icon: ScanSearch },
+                { value: "a11y", label: "Accessibility", icon: Eye },
+                { value: "both", label: "SEO + Accessibility", icon: Layers },
               ] as const
             ).map((opt) => {
               const Icon = opt.icon;
