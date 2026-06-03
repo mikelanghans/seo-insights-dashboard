@@ -35,7 +35,7 @@ export interface SavedPageScan extends SavedScanSummary {
 }
 
 const SUMMARY_COLUMNS =
-  "id, root_url, scope, kind, audit_type, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, retry_scan_id, client_id, client_name, created_at, updated_at";
+  "id, root_url, scope, kind, audit_type, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, retry_scan_id, client_id, client_name, created_at, updated_at, grade_letter, grade_score";
 
 type SummaryRow = {
   id: string;
