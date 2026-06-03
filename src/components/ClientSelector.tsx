@@ -156,7 +156,7 @@ export function ClientSelector({
         <PopoverContent className="w-[260px] p-0" align="end">
           <Command
             filter={(itemValue, search) => {
-              if (itemValue === NEW_VALUE) return 1;
+              if (itemValue === NEW_VALUE || itemValue === NONE_VALUE) return 1;
               return itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
             }}
           >
