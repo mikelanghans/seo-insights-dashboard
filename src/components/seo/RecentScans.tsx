@@ -48,6 +48,13 @@ function phaseLabel(phase: SavedScanSummary["phase"]): string {
   }
 }
 
+function gradeColorClass(letter: string): string {
+  if (letter.startsWith("A")) return "bg-success/15 text-success border-success/30";
+  if (letter === "B") return "bg-primary/15 text-primary border-primary/30";
+  if (letter === "C") return "bg-warning/15 text-warning-foreground border-warning/40";
+  return "bg-destructive/15 text-destructive border-destructive/40";
+}
+
 export function RecentScans({ refreshKey }: { refreshKey?: number }) {
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState<string | null>(null);
