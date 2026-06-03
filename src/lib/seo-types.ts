@@ -42,7 +42,7 @@ export interface SchemaItem {
   raw: JsonValue;
 }
 
-export type AuditType = "seo" | "a11y";
+export type AuditType = "seo" | "a11y" | "both";
 
 export interface AuditReport {
   requestedUrl: string;
