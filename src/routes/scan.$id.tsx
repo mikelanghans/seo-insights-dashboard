@@ -10,9 +10,8 @@ import {
   getScanStatus,
   updateScanReport,
   setScanPublic,
-  type SavedScan,
-  type SavedScanSummary,
 } from "@/lib/scans";
+import type { SavedScan, SavedScanSummary } from "@/lib/scans";
 import type { SiteAuditReport } from "@/lib/seo-types";
 import { useAuth } from "@/hooks/use-auth";
 import { exportElementToPdf, pdfFilenameForUrl } from "@/lib/pdf-export";
