@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const NEW_VALUE = "__new__";
+const NONE_VALUE = "__none__";
 
 export function ClientSelector({
   value,
