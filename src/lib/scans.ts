@@ -22,6 +22,8 @@ export interface SavedScanSummary {
   clientName: string | null;
   createdAt: string;
   updatedAt: string;
+  gradeLetter: string | null;
+  gradeScore: number | null;
 }
 
 export interface SavedScan extends SavedScanSummary {
