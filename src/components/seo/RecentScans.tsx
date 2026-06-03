@@ -48,6 +48,13 @@ function phaseLabel(phase: SavedScanSummary["phase"]): string {
   }
 }
 
+function gradeColorClass(letter: string): string {
+  if (letter.startsWith("A")) return "bg-success/15 text-success border-success/30";
+  if (letter === "B") return "bg-primary/15 text-primary border-primary/30";
+  if (letter === "C") return "bg-warning/15 text-warning-foreground border-warning/40";
+  return "bg-destructive/15 text-destructive border-destructive/40";
+}
+
 export function RecentScans({ refreshKey }: { refreshKey?: number }) {
   const queryClient = useQueryClient();
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -233,6 +240,22 @@ export function RecentScans({ refreshKey }: { refreshKey?: number }) {
                   )}
                 </p>
               </div>
+              {!isRunning && !isFailed && scan.gradeLetter && (
+                <div
+                  className={cn(
+                    "flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-md border",
+                    gradeColorClass(scan.gradeLetter),
+                  )}
+                  aria-label={`Grade ${scan.gradeLetter}${scan.gradeScore !== null ? `, score ${scan.gradeScore}` : ""}`}
+                >
+                  <span className="text-sm font-bold leading-none">{scan.gradeLetter}</span>
+                  {scan.gradeScore !== null && (
+                    <span className="mt-0.5 text-[10px] font-medium leading-none opacity-80">
+                      {scan.gradeScore}
+                    </span>
+                  )}
+                </div>
+              )}
               <Link
                 to={toRoute}
                 params={{ id: scan.id }}

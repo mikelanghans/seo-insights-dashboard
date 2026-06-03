@@ -22,6 +22,8 @@ export interface SavedScanSummary {
   clientName: string | null;
   createdAt: string;
   updatedAt: string;
+  gradeLetter: string | null;
+  gradeScore: number | null;
 }
 
 export interface SavedScan extends SavedScanSummary {
@@ -33,7 +35,7 @@ export interface SavedPageScan extends SavedScanSummary {
 }
 
 const SUMMARY_COLUMNS =
-  "id, root_url, scope, kind, audit_type, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, retry_scan_id, client_id, client_name, created_at, updated_at";
+  "id, root_url, scope, kind, audit_type, status, phase, pages_scanned, pages_total, discovered_url_count, error_message, retry_scan_id, client_id, client_name, created_at, updated_at, grade_letter, grade_score";
 
 type SummaryRow = {
   id: string;
@@ -52,6 +54,8 @@ type SummaryRow = {
   client_name: string | null;
   created_at: string;
   updated_at: string;
+  grade_letter: string | null;
+  grade_score: number | null;
 };
 
 function mapSummary(row: SummaryRow): SavedScanSummary {
@@ -72,6 +76,8 @@ function mapSummary(row: SummaryRow): SavedScanSummary {
     clientName: row.client_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    gradeLetter: row.grade_letter,
+    gradeScore: row.grade_score,
   };
 }
 
@@ -141,7 +147,14 @@ export async function listRecentScans(
   if (opts?.until) q = q.lte("created_at", opts.until);
   const { data, error } = await q;
   if (error || !data) return [];
-  return (data as SummaryRow[]).map(mapSummary);
+  const rows = (data as SummaryRow[]).map(mapSummary);
+  const needsBackfill = rows
+    .filter((r) => r.status === "complete" && r.gradeLetter === null)
+    .map((r) => r.id);
+  if (needsBackfill.length > 0) {
+    void backfillScanGrades(needsBackfill);
+  }
+  return rows;
 }
 
 export async function listScansForClient(clientId: string): Promise<SavedScanSummary[]> {
@@ -171,7 +184,7 @@ export interface ClientLatestScanSummary extends SavedScanSummary {
 export async function listLatestScanPerClient(): Promise<Record<string, ClientLatestScanSummary>> {
   const { data, error } = await supabase
     .from("scans")
-    .select(`${SUMMARY_COLUMNS}, grade_letter, grade_score`)
+    .select(SUMMARY_COLUMNS)
     .not("client_id", "is", null)
     .eq("status", "complete")
     .order("created_at", { ascending: false })
